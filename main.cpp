@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <vector>
 #include "Chess.h"
-//#include "IO.h"
+#include "IO.h"
 
 using namespace std;
 
@@ -50,14 +50,14 @@ void printBoard(const Game& game) {
 
 int main () {
 
-    Game game(FEN("8/2p2p2/8/8/8/8/2P2P2/8"));
-    printBoard(game);
+    Game game(IO::FEN("8/1p4p1/2P2P2/8/8/2p2p2/1P4P1/8"));
+    IO::printBoard(game);
 
-    Square lowerLeftPawn = {2, 1};
-    Move m = { lowerLeftPawn, lowerLeftPawn + Square{0,1}, };
+    Square lowerLeftPawn = {1, 1};
+    Move m = { lowerLeftPawn, lowerLeftPawn + Square{0,2} };
 
     game.AttemptMove(m, Teams::WHITE);
     cout << "---------------" << endl;
-    printBoard(game);
+    IO::printBoard(game);
 
 }

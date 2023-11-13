@@ -57,10 +57,26 @@ class Game {
             legal.valid = false;
             legal.color = color;
 
+            // move is possible via piece definition
             if (!getPiece(m.from)->PossibleMove(m))
                 return legal;
 
+            switch (getPieceType(m.from)) {
+                case PieceType::PAWN:
+                    // a pawn captures if and only if it moves sideways
+                    legal.moveType.captures = (m.to.x - m.from.x != 0);
+                    if (legal.moveType.captures) {
+                        // nothing at that square
+                        if (!getPiece(m.to)) {
+                            // if (getPiece(m.to-{})) // TODO en passant
+                            return legal;
+                        }
+                    }
+                    break;
+            }
+
             // ... FIXME
+            // ... check if it collides
             // ... king is checked or not
             // ... would put its king in check or not
             // ... can castle or not
@@ -89,7 +105,8 @@ class Game {
             if (!move.valid)
                 return false;
 
-            if (move != LegalMove(move.move, move.color)) // must be precise
+            // the move must be precise
+            if (move != LegalMove(move.move, move.color))
                 return false;
 
             // perform actual move
