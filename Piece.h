@@ -11,19 +11,13 @@ public:
 
 class Pawn : public Piece {
 private:
-    // TODO:
-    // expand tracking of moved pawns into a method inside of the Game
-    // it deserves responsibility and when importing a board this will
-    // be implicitly defined by the board
     bool moved = false;
 
     int direction;
 public:
     Pawn(int direction = 0) : direction(direction) {}
 
-    virtual constexpr PieceType Type() const override {
-        return PieceType::PAWN;
-    }
+    virtual constexpr PieceType Type() const override { return PieceType::PAWN; }
 
     virtual bool PossibleMove(const Move& m) const override {
         // piece cannot move to itself
@@ -51,7 +45,6 @@ public:
         return false;
     }
 
-    // TODO (above)
     bool hasMoved() const { return moved; }
     void setMoved() { this->moved = true; }
 };

@@ -2,6 +2,9 @@
 #include "Piece.h"
 #include <unordered_map>
 #include <vector>
+#include <list>
+
+// TODO maybe rewrite everything with std::find_if
 
 typedef std::unordered_map<Square, Piece*> PieceMap;
 
@@ -11,14 +14,30 @@ class Game {
         // each team has its own pieces
         // pieces are mapped from the squares they occupy
         std::vector<PieceMap> teams;
-
+        
+        CompleteMove lastMove;
+        std::list<Piece*> unmoved;
+        
         // Invariants:
         // pieces do not move between the maps
         // pieces cannot occupy the same square
 
     public:
-        Game(int teamcount) { teams.reserve(teamcount); }
-        Game(std::vector<PieceMap> teams) : teams(teams) {}
+        Game(int teamcount = 2) { teams.reserve(teamcount); }
+        Game(std::vector<PieceMap> teams) : teams(teams) {
+            // initialization logic
+            for (const auto& team : teams) for (const auto& pair : team) {
+                Square square = pair.first;
+                Piece* piece = pair.second;
+
+                switch (piece->Type()) {
+                    case PieceType::PAWN:
+                        if (square.y == 2 || square.y == 7)
+                            unmoved.push_back(piece);
+                        break;
+                }
+            }
+        }
         ~Game() = default;
 
         PieceMap getTeamPieces(Teams team) const { return teams[team]; }
@@ -57,8 +76,9 @@ class Game {
             legal.valid = false;
             legal.color = color;
 
+            Piece* piece = getPiece(m.from);
             // move is possible via piece definition
-            if (!getPiece(m.from)->PossibleMove(m))
+            if (!piece->PossibleMove(m))
                 return legal;
 
             switch (getPieceType(m.from)) {
@@ -69,17 +89,19 @@ class Game {
                         // nothing at that square
                         if (!getPiece(m.to)) {
                             // if (getPiece(m.to-{})) // TODO en passant
+                            // TODO promotions
                             return legal;
                         }
                     }
+
                     break;
             }
 
             // ... FIXME
-            // ... check if it collides
             // ... king is checked or not
             // ... would put its king in check or not
             // ... can castle or not
+            // ... check if it collides
 
             legal.valid = true;
             return legal;
@@ -96,8 +118,7 @@ class Game {
 
         // Checks if a move is possible & legal, then performs the move
         bool AttemptMove(const Move& move, const Teams color) {
-            AttemptMove(LegalMove(move, color));
-            return true;
+            return AttemptMove(LegalMove(move, color));
         }
 
         // You can attempt at making a full move, but you must be precise
@@ -113,6 +134,7 @@ class Game {
             // FIXME: add capturing
             std::swap(teams[move.color][move.move.from], teams[move.color][move.move.to]);
 
+            lastMove = move;
             return true;
         }
 

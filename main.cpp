@@ -27,6 +27,7 @@ AlgebraicMove discoverMove(std::string in) {
     return ret;
 }
 
+// TODO Also optionally read from a file (almost the same thing if you use stringstreams)
 // TODO https://codereview.stackexchange.com/questions/251795/parsing-a-chess-fen
 std::vector<PieceMap> FEN(std::string in) {
     std::vector<PieceMap> ret(2);
@@ -55,9 +56,15 @@ int main () {
 
     Square lowerLeftPawn = {1, 1};
     Move m = { lowerLeftPawn, lowerLeftPawn + Square{0,2} };
-
     game.AttemptMove(m, Teams::WHITE);
+    
     cout << "---------------" << endl;
     IO::printBoard(game);
 
+    lowerLeftPawn = {1, 3};
+    m = { lowerLeftPawn, lowerLeftPawn + Square{0,2} };
+    game.AttemptMove(m, Teams::WHITE);
+    
+    cout << "---------------" << endl;
+    IO::printBoard(game);
 }

@@ -99,9 +99,18 @@ struct CompleteMove {
 
     bool operator!=(const CompleteMove& other) const { return !(*this == other); }
 
-    CompleteMove operator+(const Teams&& color) {
+    CompleteMove operator+(const Teams& color) {
         CompleteMove ret = (*this);
         ret.color = color;
         return ret;
+    }
+    
+    CompleteMove operator=(const CompleteMove other) {
+        valid = other.valid;
+        color = other.color;
+        move = other.move;
+        moveType = other.moveType;
+        pieceType = other.pieceType;
+        return (*this);
     }
 };
