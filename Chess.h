@@ -6,6 +6,8 @@
 
 // TODO maybe rewrite everything with std::find_if
 
+// NOTE draw detection might be costly...
+
 typedef std::unordered_map<Square, Piece*> PieceMap;
 
 class Game {
@@ -17,7 +19,7 @@ class Game {
         
         CompleteMove lastMove;
         std::list<Piece*> unmoved;
-        
+
         // Invariants:
         // pieces do not move between the maps
         // pieces cannot occupy the same square
@@ -39,6 +41,10 @@ class Game {
             }
         }
         ~Game() = default;
+
+        Teams getWinner() {
+            return Teams::NONE; // TODO
+        }
 
         PieceMap getTeamPieces(Teams team) const { return teams[team]; }
 
@@ -98,10 +104,10 @@ class Game {
             }
 
             // ... FIXME
-            // ... king is checked or not
-            // ... would put its king in check or not
-            // ... can castle or not
             // ... check if it collides
+            // ... king is checked or not
+            // ... would put its own king in check or not
+            // ... can castle or not
 
             legal.valid = true;
             return legal;
@@ -117,9 +123,7 @@ class Game {
         // all that often
 
         // Checks if a move is possible & legal, then performs the move
-        bool AttemptMove(const Move& move, const Teams color) {
-            return AttemptMove(LegalMove(move, color));
-        }
+        bool AttemptMove(const Move& move, const Teams color) { return AttemptMove(LegalMove(move, color)); }
 
         // You can attempt at making a full move, but you must be precise
         bool AttemptMove(CompleteMove move) {
@@ -193,4 +197,5 @@ vector<CompleteMove> interpretMove(PieceMap teamPieces, AlgebraicMove algebraicM
     return ret;
 }
 
-// TODO add modular board structure
+// TODO add modular board/boundaries structure
+// TODO encapsulate implementation from declaration (Chess.cpp)

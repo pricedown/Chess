@@ -50,21 +50,28 @@ void printBoard(const Game& game) {
 }
 
 int main () {
-
+    
     Game game(IO::FEN("8/1p4p1/2P2P2/8/8/2p2p2/1P4P1/8"));
-    IO::printBoard(game);
 
-    Square lowerLeftPawn = {1, 1};
-    Move m = { lowerLeftPawn, lowerLeftPawn + Square{0,2} };
-    game.AttemptMove(m, Teams::WHITE);
-    
-    cout << "---------------" << endl;
-    IO::printBoard(game);
+    Teams tomove = Teams::WHITE;
+    while (game.getWinner() == Teams::NONE) {
+        if (tomove == Teams::WHITE) cout << "White";
+        else cout << "Black";
+        
+        cout << " to move." << endl;
+        cout << "---------------" << endl;
+        IO::printBoard(game);
+        
+        Move m;
+        cout << "From: ";
+        cin >> m.from.x >> m.from.y;
+        
+        cout << "to: ";
+        cin >> m.to.x >> m.to.y;
 
-    lowerLeftPawn = {1, 3};
-    m = { lowerLeftPawn, lowerLeftPawn + Square{0,2} };
-    game.AttemptMove(m, Teams::WHITE);
-    
-    cout << "---------------" << endl;
-    IO::printBoard(game);
+        game.AttemptMove(m, tomove);
+
+        if (tomove == Teams::WHITE) tomove = Teams::BLACK;
+        else tomove = Teams::WHITE;
+    }
 }
