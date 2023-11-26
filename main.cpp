@@ -22,7 +22,77 @@ using namespace std;
 AlgebraicMove discoverMove(std::string in) {
     AlgebraicMove ret;
 
-    // ...
+    int n = in.size();
+    char x = -1, y = -1;
+
+    if (n == 0) return ret;
+
+    if (islower(in[0])) {
+        ret.pieceType = PieceType::PAWN;
+    }
+    else {
+        switch (in[0]) {
+        case 'K': ret.pieceType = PieceType::KING;
+            break;
+        case 'Q': ret.pieceType = PieceType::QUEEN;
+            break;
+        case 'R': ret.pieceType = PieceType::ROOK;
+            break;
+        case 'B': ret.pieceType = PieceType::BISHOP;
+            break;
+        case 'N': ret.pieceType = PieceType::KNIGHT;
+        }
+    }
+    // assigning piecetype
+
+    if (n > 1 && in[1] == 'x') ret.moveType.captures = true;
+
+    if (in[n - 1] == '+' || in[n - 1] == '#') ret.moveType.checks = true;
+    else if (in[n - 1] == 'O') ret.moveType.castles = true;
+    else if (isupper(in[n-1])) ret.moveType.promotes = true;
+    // checking if move captures, checks, castles or promotes
+
+    if (ret.moveType.captures == true) {
+        if (n > 3) {
+            x = in[3];
+            y = in[4];
+        }
+    }
+    else {
+        if (ret.pieceType == PieceType::PAWN) {
+            if (n > 1) {
+                x = in[0];
+                y = in[1];
+            }
+        }
+        else {
+            if (n > 2) {
+                x = in[1];
+                y = in[2];
+            }
+        }
+    }
+    // assigning x and y to the correct char in the string
+
+    switch (x) {
+    case 'a': ret.to.x = 0;
+        break;
+    case 'b': ret.to.x = 1;
+        break;
+    case 'c': ret.to.x = 2;
+        break;
+    case 'd': ret.to.x = 3;
+        break;
+    case 'e': ret.to.x = 4;
+        break;
+    case 'f': ret.to.x = 5;
+        break;
+    case 'g': ret.to.x = 6;
+        break;
+    case 'h': ret.to.x = 7;
+    }
+    if (y > 0 && y < 9) ret.to.y = y - 1;
+    // converts chars x, y to 0-indexed board position 
 
     return ret;
 }
