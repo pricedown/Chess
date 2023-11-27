@@ -102,7 +102,53 @@ AlgebraicMove discoverMove(std::string in) {
 std::vector<PieceMap> FEN(std::string in) {
     std::vector<PieceMap> ret(2);
 
-    // ...
+    int x = 0, y = 7;
+    int ptr = 0;
+
+    while (y >= 0 || ptr < in.size()) {
+        if (isdigit(in[ptr])) {
+            for (int i = 0; i < in[ptr] - '0'; i++){
+                if (x < 8) x++;
+            }
+        }
+        else if (in[ptr] != '/') {
+            Square square;
+            square.x = x;
+            square.y = y;
+            switch (in[ptr]) {
+            case 'p': ret[1][square] = new Pawn(2);
+                break;
+            case 'P': ret[0][square] = new Pawn(0);
+                break;
+            case 'r': ret[1][square] = new Pawn(0); // new Rook(0);
+                break;
+            case 'R': ret[0][square] = new Pawn(1); // new Rook(1);
+                break;
+            case 'n': ret[1][square] = new Pawn(0); // new Knight(0);
+                break;
+            case 'N': ret[0][square] = new Pawn(1); // new Knight(1);
+                break;
+            case 'b': ret[1][square] = new Pawn(0); // new Bishop(0);
+                break;
+            case 'B': ret[0][square] = new Pawn(1); // new Bishop(1);
+                break;
+            case 'q': ret[1][square] = new Pawn(0); // new Queen(0);
+                break;
+            case 'Q': ret[0][square] = new Pawn(1); // new Queen(1);
+                break;
+            case 'k': ret[1][square] = new Pawn(0); // new King(0);
+                break;
+            case 'K': ret[0][square] = new Pawn(1); // new King(1);
+                break;
+            }
+            x++;
+        }
+        if (x > 7) {
+            x = 0;
+            y--;
+        }
+        ptr++;
+    }
 
     return ret;
 }
@@ -110,11 +156,32 @@ std::vector<PieceMap> FEN(std::string in) {
 void printBoard(const Game& game) {
     // TODO Assuming an 8x8 chessboard (i'll change that later)
     int boardSize = 8;
-    for (int y = boardSize; y >= 0; y--) {
+    for (int y = boardSize-1; y >= 0; y--) {
         for (int x = 0; x < boardSize; x++) {
-            // TODO: cout the chess piece / empty space
+            char squareOut;
+            Square square;
+            square.x = x;
+            square.y = y;
+            switch (game.getPieceType(square)) {
+                case PieceType::PAWN: squareOut = 'p';
+                    break;
+                case PieceType::ROOK: squareOut = 'r';
+                    break;
+                case PieceType::KNIGHT: squareOut = 'n';
+                    break;
+                case PieceType::BISHOP: squareOut = 'b';
+                    break;
+                case PieceType::KING: squareOut = 'k';
+                    break;
+                case PieceType::QUEEN: squareOut = 'q';
+                    break;
+                default: squareOut = '.';
+            }
+
+            if (game.getPieceTeam(square) == 0) squareOut = toupper(squareOut);
+            cout << squareOut << " ";
         }
-        std::cout << " ";
+        std::cout << std::endl;
     }
     std::cout << std::endl;
 }
