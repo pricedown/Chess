@@ -5,7 +5,7 @@ class Piece {
 public:
     Piece() = default;
 
-    virtual constexpr PieceType Type() const { return PieceType::NONE; }
+    virtual PieceType Type() const { return PieceType::NONE; }
     virtual bool PossibleMove(const Move&) const { return false; }
 };
 
@@ -17,7 +17,7 @@ private:
 public:
     Pawn(int direction = 0) : direction(direction) {}
 
-    virtual constexpr PieceType Type() const override { return PieceType::PAWN; }
+    virtual PieceType Type() const override { return PieceType::PAWN; }
 
     virtual bool PossibleMove(const Move& m) const override {
         // piece cannot move to itself

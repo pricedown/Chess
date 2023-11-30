@@ -186,7 +186,7 @@ vector<CompleteMove> interpretMove(PieceMap teamPieces, AlgebraicMove algebraicM
     // complete the partially created move using Piece definitions
     for (auto pieceMap : teamPieces) {
         Move move = { pieceMap.first, algebraicMove.to };
-        if (pieceMap.second->PossibleMove(move)) {
+        if (pieceMap.second && pieceMap.second->PossibleMove(move)) {
             // add a possible (not necessarily legal) move to vector
             CompleteMove complete = partial;
             complete.move = move;
