@@ -95,6 +95,7 @@ struct CompleteMove {
             (moveType == other.moveType) &&
             (pieceType == other.pieceType);
         // TODO clean up all of these horrible overloads
+        // and simplify them with cmath
     }
 
     bool operator!=(const CompleteMove& other) const { return !(*this == other); }

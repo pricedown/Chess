@@ -116,29 +116,29 @@ std::vector<PieceMap> FEN(std::string in) {
             square.x = x;
             square.y = y;
             switch (in[ptr]) {
-                case 'p': ret[1][square] = new Pawn(1);
+                case 'p': ret[1][square] = new Pawn(2);
                     break;
                 case 'P': ret[0][square] = new Pawn(0);
                     break;
-                case 'r': ret[1][square] = new Pawn(0); // new Rook(0);
+                case 'r': ret[1][square] = new Rook;
                     break;
-                case 'R': ret[0][square] = new Pawn(1); // new Rook(1);
+                case 'R': ret[0][square] = new Rook;
                     break;
-                case 'n': ret[1][square] = new Pawn(0); // new Knight(0);
+                case 'n': ret[1][square] = new Knight;
                     break;
-                case 'N': ret[0][square] = new Pawn(1); // new Knight(1);
+                case 'N': ret[0][square] = new Knight;
                     break;
-                case 'b': ret[1][square] = new Pawn(0); // new Bishop(0);
+                case 'b': ret[1][square] = new Bishop;
                     break;
-                case 'B': ret[0][square] = new Pawn(1); // new Bishop(1);
+                case 'B': ret[0][square] = new Bishop;
                     break;
-                case 'q': ret[1][square] = new Pawn(0); // new Queen(0);
+                case 'q': ret[1][square] = new Queen;
                     break;
-                case 'Q': ret[0][square] = new Pawn(1); // new Queen(1);
+                case 'Q': ret[0][square] = new Queen;
                     break;
-                case 'k': ret[1][square] = new Pawn(0); // new King(0);
+                case 'k': ret[1][square] = new King;
                     break;
-                case 'K': ret[0][square] = new Pawn(1); // new King(1);
+                case 'K': ret[0][square] = new King;
                     break;
             }
             x++;
@@ -196,7 +196,7 @@ void printBoard(const Game& game) {
 
 int main () {
 
-    Game game(FEN("8/pppppppp/8/8/8/8/PPPPPPPP/8"));//"8/1p4p1/2P2P2/8/8/2p2p2/1P4P1/8"));
+    Game game(FEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"));
 
     Teams tomove = Teams::WHITE;
     while (game.getWinner() == Teams::NONE) {
@@ -213,9 +213,11 @@ int main () {
 
         //cout << discoverMove(notation).to.x << " " << discoverMove(notation).to.y << endl;
 
-        game.AttemptMove(interpretMove(game.getTeamPieces(tomove) , discoverMove(notation), tomove), tomove);
+        if (game.AttemptMove(interpretMove(game.getTeamPieces(tomove) , discoverMove(notation), tomove), tomove))
+        {
+            if (tomove == Teams::WHITE) tomove = Teams::BLACK;
+            else tomove = Teams::WHITE;
+        }
 
-        if (tomove == Teams::WHITE) tomove = Teams::BLACK;
-        else tomove = Teams::WHITE;
     }
 }

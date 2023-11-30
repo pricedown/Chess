@@ -73,7 +73,7 @@ class Game {
 
         //virtual MoveType EvaluateMoveType(Move); // Considered, potentially viable strategy
 
-        CompleteMove LegalMove(const Move& m, const Teams color) const {
+        CompleteMove LegalMove(const Move& m, const Teams color, const PieceType pieceType) const {
             // Invariant:
             // there must be only one CompleteMove for every valid move
 
@@ -85,6 +85,10 @@ class Game {
             Piece* piece = getPiece(m.from);
             // move is possible via piece definition
             if (!piece->PossibleMove(m))
+                return legal;
+
+            // piece is the right type
+            if (getPieceType(m.from) != pieceType)
                 return legal;
 
             // TODO
@@ -115,7 +119,7 @@ class Game {
         }
 
         CompleteMove LegalMove(const CompleteMove& m) {
-            return LegalMove(m.move, m.color);
+            return LegalMove(m.move, m.color, m.pieceType);
         }
 
         // TODO make the relationship between CompleteMove methods and
@@ -124,7 +128,9 @@ class Game {
         // all that often
 
         // Checks if a move is possible & legal, then performs the move
-        bool AttemptMove(const Move& move, const Teams color) { return AttemptMove(LegalMove(move, color)); }
+        // Returns success
+        bool AttemptMove(const Move& move, const Teams color, const PieceType pieceType) 
+        { return AttemptMove(LegalMove(move, color, pieceType)); }
 
         // You can attempt at making a full move, but you must be precise
         bool AttemptMove(CompleteMove move) {
@@ -132,7 +138,7 @@ class Game {
                 return false;
 
             // the move must be precise
-            if (move != LegalMove(move.move, move.color))
+            if (move != LegalMove(move.move, move.color, move.pieceType))
                 return false;
 
             // perform actual move
@@ -163,7 +169,11 @@ class Game {
                 return true;
             } else {
                 std::cerr << "There are " << legalMoves.size()
-                    << " conflicting legal moves possible." << std::endl;
+                    << " legal moves possible!" << std::endl;
+                for (auto move : legalMoves) {
+                    std::cerr << "Move 1: " << static_cast<int>(move.pieceType) << " " << move.move.from.x << " " << move.move.from.y 
+                        << ": " << move.move.to.x << " " << move.move.to.y << std::endl;
+                }
                 return false;
             }
 
@@ -190,7 +200,7 @@ vector<CompleteMove> interpretMove(PieceMap teamPieces, AlgebraicMove algebraicM
     for (auto pieceMap : teamPieces) {
         Move move = { pieceMap.first, algebraicMove.to };
         if (pieceMap.second && pieceMap.second->PossibleMove(move)) {
-            // add a possible (not necessarily legal) move to vector
+            // add a complete, possible (not necessarily legal) move to vector
             CompleteMove complete = partial;
             complete.move = move;
             ret.push_back(complete);
