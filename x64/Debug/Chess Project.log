@@ -1,0 +1,4 @@
+﻿  main.cpp
+C:\Users\edmond.slobodow\source\repos\Chess\main.cpp(27): warning C4700: uninitialized local variable 'ret' used
+MSVCRTD.lib(exe_winmain.obj) : error LNK2019: unresolved external symbol WinMain referenced in function "int __cdecl invoke_main(void)" (?invoke_main@@YAHXZ)
+C:\Users\edmond.slobodow\source\repos\Chess\x64\Debug\Chess Project.exe : fatal error LNK1120: 1 unresolved externals
