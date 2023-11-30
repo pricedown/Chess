@@ -43,7 +43,7 @@ class Game {
         ~Game() = default;
 
         Teams getWinner() {
-            return Teams::NONE; // TODO
+            return Teams::NONE; // TODO determine if anyone has won the game
         }
 
         PieceMap getTeamPieces(Teams team) const { return teams[team]; }
@@ -87,6 +87,7 @@ class Game {
             if (!piece->PossibleMove(m))
                 return legal;
 
+            // TODO
             switch (getPieceType(m.from)) {
                 case PieceType::PAWN:
                     // a pawn captures if and only if it moves sideways
@@ -104,7 +105,7 @@ class Game {
             }
 
             // ... FIXME
-            // ... check if it collides
+            // ... check if it collides with something on the way
             // ... king is checked or not
             // ... would put its own king in check or not
             // ... can castle or not
@@ -135,8 +136,10 @@ class Game {
                 return false;
 
             // perform actual move
-            // FIXME: add capturing
-            std::swap(teams[move.color][move.move.from], teams[move.color][move.move.to]);
+            
+            // FIXME: add capturing support
+            teams[move.color][move.move.to] = teams[move.color][move.move.from];
+            teams[move.color][move.move.from] = nullptr;
 
             lastMove = move;
             return true;
