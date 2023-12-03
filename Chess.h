@@ -84,6 +84,8 @@ public:
         legal.color = color;
 
         Piece* piece = getPiece(m.from);
+        Piece* captured = getPiece(m.to);
+
         // move is possible via piece definition
         if (!piece->PossibleMove(m))
             return legal;
@@ -92,21 +94,18 @@ public:
         if (getPieceType(m.from) != pieceType)
             return legal;
 
+        legal.moveType.captures = (captured != nullptr);
+
         // TODO
         Square offset = (m.to - m.from);
 
         switch (getPieceType(m.from)) {
             case PieceType::PAWN:
                 // a pawn captures if and only if it moves sideways
-                legal.moveType.captures = (offset.x != 0);
-                if (legal.moveType.captures) {
-                    // if nothing at that square, invalid
-                    if (!getPiece(m.to)) {
-                        // if (getPiece(m.to-{})) // TODO en passant
-                        // TODO promotions
-                        return legal;
-                    }
-                } 
+                
+                if (legal.moveType.captures != (offset.x != 0))
+                    return legal;
+
                 if (abs(offset.y) >= 2) {
                     for (auto movedPiece : moved) {
                         if (movedPiece == piece)

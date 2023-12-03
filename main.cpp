@@ -116,7 +116,7 @@ std::vector<PieceMap> FEN(std::string in) {
             square.x = x;
             square.y = y;
             switch (in[ptr]) {
-                case 'p': ret[1][square] = new Pawn(1);
+                case 'p': ret[1][square] = new Pawn(2);
                     break;
                 case 'P': ret[0][square] = new Pawn(0);
                     break;

@@ -29,18 +29,15 @@ public:
         // counter-rotate the offset
         forwardStep = (m.to - m.from);
         for (int i = 0; i < direction % 4; i++) {
+            int x = forwardStep.x;
             forwardStep.x = -forwardStep.y;
-            forwardStep.y = forwardStep.x;
+            forwardStep.y = x;
         }
 
-        switch (forwardStep.y) {
-            case 1:
-                // cannot move sideways more than one square
-                return (abs(forwardStep.x) <= 1);
-            case 2:
-                // first move 2-square jump
-                return !moved;
-        }
+        if (forwardStep.y == 1)
+            return (abs(forwardStep.x) <= 1);
+        if (forwardStep.y == 2)
+            return (forwardStep.x == 0);
 
         return false;
     }
