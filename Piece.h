@@ -29,8 +29,8 @@ public:
         // counter-rotate the offset
         forwardStep = (m.to - m.from);
         for (int i = 0; i < direction % 4; i++) {
-            forwardStep.x = forwardStep.y;
-            forwardStep.y = -forwardStep.x;
+            forwardStep.x = -forwardStep.y;
+            forwardStep.y = forwardStep.x;
         }
 
         switch (forwardStep.y) {

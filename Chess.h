@@ -2,6 +2,7 @@
 #include "Piece.h"
 #include <unordered_map>
 #include <vector>
+#include <cmath>
 #include <list>
 
 // TODO maybe rewrite everything with std::find_if
@@ -11,174 +12,182 @@
 typedef std::unordered_map<Square, Piece*> PieceMap;
 
 class Game {
-    protected:
-        // vector of teams
-        // each team has its own pieces
-        // pieces are mapped from the squares they occupy
-        std::vector<PieceMap> teams;
-        
-        CompleteMove lastMove;
-        std::list<Piece*> unmoved;
+protected:
+    // vector of teams
+    // each team has its own pieces
+    // pieces are mapped from the squares they occupy
+    std::vector<PieceMap> teams;
 
-        // Invariants:
-        // pieces do not move between the maps
-        // pieces cannot occupy the same square
+    CompleteMove lastMove;
+    std::list<Piece*> moved;
 
-    public:
-        Game(int teamcount = 2) { teams.reserve(teamcount); }
-        Game(std::vector<PieceMap> teams) : teams(teams) {
-            // initialization logic
-            for (const auto& team : teams) for (const auto& pair : team) {
-                Square square = pair.first;
-                Piece* piece = pair.second;
+    // Invariants:
+    // pieces do not move between the maps
+    // pieces cannot occupy the same square
 
-                switch (piece->Type()) {
-                    case PieceType::PAWN:
-                        if (square.y == 2 || square.y == 7)
-                            unmoved.push_back(piece);
-                        break;
-                }
-            }
-        }
-        ~Game() = default;
+public:
+    Game(int teamcount = 2) { teams.reserve(teamcount); }
+    Game(std::vector<PieceMap> teams) : teams(teams) {
+        // initialization logic
+        for (const auto& team : teams) for (const auto& pair : team) {
+            Square square = pair.first;
+            Piece* piece = pair.second;
 
-        Teams getWinner() {
-            return Teams::NONE; // TODO determine if anyone has won the game
-        }
-
-        PieceMap getTeamPieces(Teams team) const { return teams[team]; }
-
-        PieceType getPieceType(Square square) const {
-            for (auto team : teams) {
-                if (Piece* p = team[square])
-                    return p->Type();
-            }
-            return PieceType::NONE;
-        }
-
-        Piece* getPiece(Square square) const {
-            for (auto team : teams) {
-                if (Piece* p = team[square])
-                    return p;
-            }
-            return nullptr;
-        }
-
-        Teams getPieceTeam(Square square) const {
-            for (int i = 0; i < teams.size(); i++)
-                if (teams[i].count(square) > 0)
-                    return static_cast<Teams>(i);
-            return Teams::NONE;
-        }
-
-        //virtual MoveType EvaluateMoveType(Move); // Considered, potentially viable strategy
-
-        CompleteMove LegalMove(const Move& m, const Teams color, const PieceType pieceType) const {
-            // Invariant:
-            // there must be only one CompleteMove for every valid move
-
-            CompleteMove legal;
-            legal.move = m;
-            legal.valid = false;
-            legal.color = color;
-
-            Piece* piece = getPiece(m.from);
-            // move is possible via piece definition
-            if (!piece->PossibleMove(m))
-                return legal;
-
-            // piece is the right type
-            if (getPieceType(m.from) != pieceType)
-                return legal;
-
-            // TODO
-            switch (getPieceType(m.from)) {
+            switch (piece->Type()) {
                 case PieceType::PAWN:
-                    // a pawn captures if and only if it moves sideways
-                    legal.moveType.captures = (m.to.x - m.from.x != 0);
-                    if (legal.moveType.captures) {
-                        // nothing at that square
-                        if (!getPiece(m.to)) {
-                            // if (getPiece(m.to-{})) // TODO en passant
-                            // TODO promotions
-                            return legal;
-                        }
-                    }
-
+                    if (square.y != 1 && square.y != 6)
+                        moved.push_back(piece);
                     break;
             }
+        }
+    }
+    ~Game() = default;
 
-            // ... FIXME
-            // ... check if it collides with something on the way
-            // ... king is checked or not
-            // ... would put its own king in check or not
-            // ... can castle or not
+    Teams getWinner() {
+        return Teams::NONE; // TODO determine if anyone has won the game
+    }
 
-            legal.valid = true;
+    PieceMap getTeamPieces(Teams team) const { return teams[team]; }
+
+    PieceType getPieceType(Square square) const {
+        for (auto team : teams) {
+            if (Piece* p = team[square])
+                return p->Type();
+        }
+        return PieceType::NONE;
+    }
+
+    Piece* getPiece(Square square) const {
+        for (auto team : teams) {
+            if (Piece* p = team[square])
+                return p;
+        }
+        return nullptr;
+    }
+
+    Teams getPieceTeam(Square square) const {
+        for (int i = 0; i < teams.size(); i++)
+            if (teams[i].count(square) > 0)
+                return static_cast<Teams>(i);
+        return Teams::NONE;
+    }
+
+    //virtual MoveType EvaluateMoveType(Move); // Considered, potentially viable strategy
+
+    CompleteMove LegalMove(const Move& m, const Teams color, const PieceType pieceType) const {
+        // Invariant:
+        // there must be only one CompleteMove for every valid move
+
+        CompleteMove legal;
+        legal.move = m;
+        legal.valid = false;
+        legal.color = color;
+
+        Piece* piece = getPiece(m.from);
+        // move is possible via piece definition
+        if (!piece->PossibleMove(m))
             return legal;
+
+        // piece is the right type
+        if (getPieceType(m.from) != pieceType)
+            return legal;
+
+        // TODO
+        Square offset = (m.to - m.from);
+
+        switch (getPieceType(m.from)) {
+            case PieceType::PAWN:
+                // a pawn captures if and only if it moves sideways
+                legal.moveType.captures = (offset.x != 0);
+                if (legal.moveType.captures) {
+                    // if nothing at that square, invalid
+                    if (!getPiece(m.to)) {
+                        // if (getPiece(m.to-{})) // TODO en passant
+                        // TODO promotions
+                        return legal;
+                    }
+                } 
+                if (abs(offset.y) >= 2) {
+                    for (auto movedPiece : moved) {
+                        if (movedPiece == piece)
+                            return legal;
+                    }
+                }
+                break;
         }
 
-        CompleteMove LegalMove(const CompleteMove& m) {
-            return LegalMove(m.move, m.color, m.pieceType);
+        // ... FIXME
+        // ... check if it collides with something on the way
+        // ... king is checked or not
+        // ... would put its own king in check or not
+        // ... can castle or not
+
+        legal.valid = true;
+        return legal;
+    }
+
+    CompleteMove LegalMove(const CompleteMove& m) {
+        return LegalMove(m.move, m.color, m.pieceType);
+    }
+
+    // TODO make the relationship between CompleteMove methods and
+    // normal Move methods concrete & consistent.
+    // try to make it so that duplication of operations doesn't happen
+    // all that often
+
+    // Checks if a move is possible & legal, then performs the move
+    // Returns success
+    bool AttemptMove(const Move& move, const Teams color, const PieceType pieceType) 
+    { return AttemptMove(LegalMove(move, color, pieceType)); }
+
+    // You can attempt at making a full move, but you must be precise
+    bool AttemptMove(CompleteMove move) {
+        if (!move.valid)
+            return false;
+
+        // the move must be precise
+        if (move != LegalMove(move.move, move.color, move.pieceType))
+            return false;
+
+        // perform actual move
+        
+        moved.push_back(teams[move.color][move.move.from]);
+        // FIXME: add capturing support
+        teams[move.color][move.move.to] = teams[move.color][move.move.from];
+        teams[move.color][move.move.from] = nullptr;
+
+        lastMove = move;
+        return true;
+    }
+
+    bool AttemptMove(const std::vector<CompleteMove>& possibleMoves, int color) {
+
+        // discover which of the moves are legal
+        std::vector<CompleteMove> legalMoves;
+        for (auto pm : possibleMoves) {
+            CompleteMove legal = LegalMove(pm);
+            if (legal.valid && legal == pm) {
+                legalMoves.push_back(legal);
+            }
         }
 
-        // TODO make the relationship between CompleteMove methods and
-        // normal Move methods concrete & consistent.
-        // try to make it so that duplication of operations doesn't happen
-        // all that often
-
-        // Checks if a move is possible & legal, then performs the move
-        // Returns success
-        bool AttemptMove(const Move& move, const Teams color, const PieceType pieceType) 
-        { return AttemptMove(LegalMove(move, color, pieceType)); }
-
-        // You can attempt at making a full move, but you must be precise
-        bool AttemptMove(CompleteMove move) {
-            if (!move.valid)
-                return false;
-
-            // the move must be precise
-            if (move != LegalMove(move.move, move.color, move.pieceType))
-                return false;
-
-            // perform actual move
-            
-            // FIXME: add capturing support
-            teams[move.color][move.move.to] = teams[move.color][move.move.from];
-            teams[move.color][move.move.from] = nullptr;
-
-            lastMove = move;
+        // If the player has entered it properly, only one legal move
+        // should be possible.
+        if (legalMoves.size() == 1) {
+            AttemptMove(legalMoves[0]);
             return true;
+        } else {
+            std::cerr << "There are " << legalMoves.size()
+                << " legal moves possible!" << std::endl;
+            for (auto move : legalMoves) {
+                std::cerr << "Move 1: " << static_cast<int>(move.pieceType) << " " << move.move.from.x << " " << move.move.from.y 
+                    << ": " << move.move.to.x << " " << move.move.to.y << std::endl;
+            }
+            return false;
         }
 
-        bool AttemptMove(const std::vector<CompleteMove>& possibleMoves, int color) {
-
-            // discover which of the moves are legal
-            std::vector<CompleteMove> legalMoves;
-            for (auto pm : possibleMoves) {
-                CompleteMove legal = LegalMove(pm);
-                if (legal.valid && legal == pm) {
-                    legalMoves.push_back(legal);
-                }
-            }
-
-            // If the player has entered it properly, only one legal move
-            // should be possible.
-            if (legalMoves.size() == 1) {
-                AttemptMove(legalMoves[0]);
-                return true;
-            } else {
-                std::cerr << "There are " << legalMoves.size()
-                    << " legal moves possible!" << std::endl;
-                for (auto move : legalMoves) {
-                    std::cerr << "Move 1: " << static_cast<int>(move.pieceType) << " " << move.move.from.x << " " << move.move.from.y 
-                        << ": " << move.move.to.x << " " << move.move.to.y << std::endl;
-                }
-                return false;
-            }
-
-            // TODO: remove touple entirely after further testing
-        }
+        // TODO: remove touple entirely after further testing
+    }
 };
 
 using namespace std;
