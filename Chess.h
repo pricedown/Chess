@@ -76,7 +76,7 @@ public:
         // can't capture your own piece
         if (legal.color == getPieceTeam(m.to)) {
             std::cerr << "you're trying to capture your own piece" << std::endl;
-            std::cerr << "team: " << legal.color << std::endl;
+            std::cerr << "team: " << getPieceTeam(m.to) << std::endl;
             legal.moveType.castles = (legal.pieceType == PieceType::KING) && (getPieceType(m.to) == PieceType::ROOK);
             if (legal.moveType.castles) {
                 for (auto movedPiece : moved) {
@@ -165,7 +165,7 @@ public:
         moved.push_back(teams[move.color][move.move.from]);
         // FIXME: add capturing support
         teams[move.color][move.move.to] = teams[move.color][move.move.from];
-        teams[move.color][move.move.from] = nullptr;
+        teams[move.color].erase(move.move.from);
 
         lastMove = move;
         return true;
