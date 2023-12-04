@@ -15,7 +15,7 @@ enum Teams {
 };
 
 struct MoveType {
-    bool captures, checks, promotes, castles;
+    bool captures, checks, promotes, castles, castleDir; // castleDir: 0 = short 1 = long
 
     bool operator==(const MoveType& other) const {
         return
@@ -23,6 +23,7 @@ struct MoveType {
             (checks == other.checks) &&
             (promotes == other.promotes) &&
             (castles == other.castles);
+            (castleDir == other.castleDir);
     }
 
     bool operator!=(const MoveType& other) const { return !(*this == other); }
@@ -47,8 +48,33 @@ struct Square {
         return {x + other.x, y + other.y};
     }
 
+    void operator+=(const Square& other) {
+        this->x = x + other.x;
+        this->y = y + other.y;
+    }
+
     Square operator-(const Square& other) const {
         return {x - other.x, y - other.y};
+    }
+
+    Square normalized() {
+        Square ret;
+
+        if (this->x > 0)
+            ret.x = 1;
+        else if (this->x < 0)
+            ret.x = -1;
+        else 
+            ret.x = 0;
+
+        if (this->y > 0)
+            ret.y = 1;
+        else if (this->y < 0)
+            ret.y = -1;
+         else 
+            ret.y = 0;
+
+        return ret;
     }
 };
 

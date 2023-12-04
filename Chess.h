@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vector>
 #include <cmath>
+#include <math.h>
 #include <list>
 
 // TODO maybe rewrite everything with std::find_if
@@ -47,31 +48,6 @@ public:
         return Teams::NONE; // TODO determine if anyone has won the game
     }
 
-    PieceMap getTeamPieces(Teams team) const { return teams[team]; }
-
-    PieceType getPieceType(Square square) const {
-        for (auto team : teams) {
-            if (Piece* p = team[square])
-                return p->Type();
-        }
-        return PieceType::NONE;
-    }
-
-    Piece* getPiece(Square square) const {
-        for (auto team : teams) {
-            if (Piece* p = team[square])
-                return p;
-        }
-        return nullptr;
-    }
-
-    Teams getPieceTeam(Square square) const {
-        for (int i = 0; i < teams.size(); i++)
-            if (teams[i].count(square) > 0)
-                return static_cast<Teams>(i);
-        return Teams::NONE;
-    }
-
     //virtual MoveType EvaluateMoveType(Move); // Considered, potentially viable strategy
 
     CompleteMove LegalMove(const Move& m, const Teams color, const PieceType pieceType) const {
@@ -82,6 +58,7 @@ public:
         legal.move = m;
         legal.valid = false;
         legal.color = color;
+        legal.pieceType = getPieceType(m.from);
 
         Piece* piece = getPiece(m.from);
         Piece* captured = getPiece(m.to);
@@ -96,10 +73,25 @@ public:
 
         legal.moveType.captures = (captured != nullptr);
 
+        if (legal.color == getPieceTeam(m.to)) {
+            legal.moveType.castles = legal.pieceType == PieceType::KING && getPieceType(m.to) == PieceType::ROOK;
+            if (legal.moveType.castles) {
+                for (auto movedPiece : moved) {
+                    if (movedPiece == piece)
+                        return legal;
+                    if (movedPiece == captured)
+                        return legal;
+                }
+                // TODO more castling logic
+            } else {
+                return legal;
+            }
+        }
+
         // TODO
         Square offset = (m.to - m.from);
 
-        switch (getPieceType(m.from)) {
+        switch (legal.pieceType) {
             case PieceType::PAWN:
                 // a pawn captures if and only if it moves sideways
                 
@@ -115,8 +107,25 @@ public:
                 break;
         }
 
+
         // ... FIXME
         // ... check if it collides with something on the way
+        if (legal.pieceType != PieceType::KNIGHT) {
+            // it didn't / cannot jump
+            
+            Square step = offset.normalized();
+            Square scan = m.from;
+
+            while (scan != m.to) {
+                Piece* p = getPiece(scan);
+                if ((p != nullptr) && (p != piece)) {
+                    return legal;
+                }
+
+                scan += step;
+            }
+        }
+
         // ... king is checked or not
         // ... would put its own king in check or not
         // ... can castle or not
@@ -187,6 +196,32 @@ public:
 
         // TODO: remove touple entirely after further testing
     }
+
+    PieceMap getTeamPieces(Teams team) const { return teams[team]; }
+
+    PieceType getPieceType(Square square) const {
+        for (auto team : teams) {
+            if (Piece* p = team[square])
+                return p->Type();
+        }
+        return PieceType::NONE;
+    }
+
+    Piece* getPiece(Square square) const {
+        for (auto team : teams) {
+            if (Piece* p = team[square])
+                return p;
+        }
+        return nullptr;
+    }
+
+    Teams getPieceTeam(Square square) const {
+        for (int i = 0; i < teams.size(); i++)
+            if (teams[i].count(square) > 0)
+                return static_cast<Teams>(i);
+        return Teams::NONE;
+    }
+
 };
 
 using namespace std;
