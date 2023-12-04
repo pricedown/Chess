@@ -50,7 +50,7 @@ public:
 
     //virtual MoveType EvaluateMoveType(Move); // Considered, potentially viable strategy
 
-    CompleteMove LegalMove(const Move& m, const Teams color, const PieceType pieceType, const Move& pretendMove = { }) const {
+    CompleteMove LegalMove(const Move& m, const Teams color, const PieceType pieceType = PieceType::NONE, const Move& pretendMove = { }) const {
         // Invariant:
         // there must be only one CompleteMove for every valid move
 
@@ -58,7 +58,6 @@ public:
         legal.move = m;
         legal.valid = false;
         legal.color = color;
-        legal.pieceType = pieceType;
 
         Piece* piece = getPiece(m.from);
         Piece* captured;
@@ -73,16 +72,22 @@ public:
             capturedSquare = m.to;
         }
 
+        if (pieceType == PieceType::NONE)
+            legal.pieceType = getPieceType(m.from);
+        else { 
+            legal.pieceType = pieceType;
+            // check if it's the right piece type
+            if (getPieceType(m.from) != pieceType) {
+                return legal;
+            }
+        }
+
         // in the scenario that you're being captured, you cannot move
         if (pretendMove.to == m.from)
             return legal;
         
         // make sure that if you're capturing, the pretendMove doesn't core dump
 
-        // check if it's the right piece type
-        if (getPieceType(m.from) != pieceType) {
-            return legal;
-        }
 
         // check if it's the right color
         if (getPieceTeam(m.from) != color) {
@@ -108,6 +113,9 @@ public:
                         return legal;
                 }
                 // TODO more castling logic
+                 
+                // check that nothing is in the way
+                
             } else {
                 return legal;
             }
@@ -152,12 +160,9 @@ public:
             }
         }
 
-        // ... would put its own king in check or not
-        // I have to check if any piece moving to the piece
-        // that the king is on is a legal move
-        
-        // checks that it's only the first iteration
+        // ... check that it's not moving into check
         if (pretendMove.from == pretendMove.to) {
+            // it is the first iteration / check
 
             Square king;
             if (legal.pieceType == PieceType::KING) 
@@ -196,8 +201,6 @@ public:
                 }
             }
         }
-
-        // ... can castle or not
 
         legal.valid = true;
         return legal;
