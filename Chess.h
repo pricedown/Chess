@@ -168,6 +168,16 @@ public:
                     if (pair.second == nullptr)
                         continue;
 
+                    if (legal.moveType.castles) {
+                        if (LegalMove({square, m.from}, static_cast<Teams>(i), getPieceType(square), { -1, -2 }).valid) {
+                            std::cerr << "Cannot castle out of check!" << std::endl;
+                            return legal;
+                        }
+
+                        if (legal.moveType.castleDir) king.x = 6;
+                        else king.x = 2;
+                    } 
+
                     if (LegalMove({square, king}, static_cast<Teams>(i), getPieceType(square), m).valid) {
                         std::cerr << "You would be putting yourself in check!" << std::endl;
                         std::cerr << "Attacking piece location: " << square.x << " " << square.y 
