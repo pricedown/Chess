@@ -50,7 +50,7 @@ public:
 
     //virtual MoveType EvaluateMoveType(Move); // Considered, potentially viable strategy
 
-    CompleteMove LegalMove(const Move& m, const Teams color) const {
+    CompleteMove LegalMove(const Move& m, const Teams color, const PieceType pieceType, const Move& pretendMove = { }) const {
         // Invariant:
         // there must be only one CompleteMove for every valid move
 
@@ -58,10 +58,30 @@ public:
         legal.move = m;
         legal.valid = false;
         legal.color = color;
-        legal.pieceType = getPieceType(m.from);
+        legal.pieceType = pieceType;
 
         Piece* piece = getPiece(m.from);
-        Piece* captured = getPiece(m.to);
+        Piece* captured;
+        Square capturedSquare;
+        
+        if ((pretendMove.from != pretendMove.to) && (pretendMove.to == m.to)) {
+                captured = getPiece(pretendMove.from);
+                capturedSquare = pretendMove.from;
+        } else {
+            captured = getPiece(m.to);
+            capturedSquare = m.to;
+        }
+
+        // check if it's the right piece type
+        if (getPieceType(m.from) != pieceType) {
+            return legal;
+        }
+
+        // check if it's the right color
+        if (getPieceTeam(m.from) != color) {
+            std::cerr << getPieceTeam(m.from) << " " << color << std::endl;
+            return legal;
+        }
 
         // move is possible via piece definition
         if (!piece->PossibleMove(m))
@@ -70,8 +90,9 @@ public:
         legal.moveType.captures = (captured != nullptr);
 
         // can't capture your own piece
-        if (legal.color == getPieceTeam(m.to)) {
-            legal.moveType.castles = (legal.pieceType == PieceType::KING) && (getPieceType(m.to) == PieceType::ROOK);
+        if (legal.color == getPieceTeam(capturedSquare)) {
+            legal.moveType.castles = (legal.pieceType == PieceType::KING)
+                && (getPieceType(capturedSquare) == PieceType::ROOK);
             if (legal.moveType.castles) {
                 for (auto movedPiece : moved) {
                     if (movedPiece == piece)
@@ -104,7 +125,6 @@ public:
                 break;
         }
 
-
         // ... FIXME
         // ... check if it collides with something on the way
         if (legal.pieceType != PieceType::KNIGHT) {
@@ -115,7 +135,9 @@ public:
 
             while (scan != m.to) {
                 Piece* p = getPiece(scan);
-                if ((p != nullptr) && (p != piece)) {
+                if ((p != nullptr) && (p != piece) && (scan != pretendMove.from)) {
+                    return legal;
+                } else if (scan == pretendMove.to) {
                     return legal;
                 }
 
@@ -126,8 +148,35 @@ public:
         // ... would put its own king in check or not
         // I have to check if any piece moving to the piece
         // that the king is on is a legal move
-        //
-        // 
+        
+        // checks that it's only the first iteration
+        if (pretendMove.from == pretendMove.to) {
+
+            Square king;
+            if (legal.pieceType == PieceType::KING) 
+                king = m.to;
+            else 
+                king = getKing(color);
+
+            for (int i = 0; i < teams.size(); i++) {
+                if (static_cast<Teams>(i) == color)
+                    continue;
+
+                std::cout << "Checking other team for possible checks" << std::endl;
+                for (const auto& pair : teams[i]) {
+                    Square square = pair.first;
+                    if (pair.second == nullptr)
+                        continue;
+
+                    if (LegalMove({square, king}, static_cast<Teams>(i), getPieceType(square), m).valid) {
+                        std::cerr << "You would be putting yourself in check!" << std::endl;
+                        std::cerr << "Attacking piece location: " << square.x << " " << square.y 
+                            << std::endl;
+                        return legal;
+                    }
+                }
+            }
+        }
 
         // ... can castle or not
 
@@ -135,11 +184,8 @@ public:
         return legal;
     }
 
-    bool attacks(Square from, Square to) {
-    }
-
     CompleteMove LegalMove(const CompleteMove& m) {
-        return LegalMove(m.move, m.color);
+        return LegalMove(m.move, m.color, m.pieceType);
     }
 
     // TODO make the relationship between CompleteMove methods and
@@ -149,8 +195,8 @@ public:
 
     // Checks if a move is possible & legal, then performs the move
     // Returns success
-    bool AttemptMove(const Move& move, const Teams color) 
-    { return AttemptMove(LegalMove(move, color)); }
+    bool AttemptMove(const Move& move, const Teams color, const PieceType pieceType) 
+    { return AttemptMove(LegalMove(move, color, pieceType)); }
 
     // You can attempt at making a full move, but you must be precise
     bool AttemptMove(CompleteMove move) {
@@ -158,7 +204,7 @@ public:
             return false;
 
         // the move must be precise
-        if (move != LegalMove(move.move, move.color))
+        if (move != LegalMove(move.move, move.color, move.pieceType))
             return false;
 
         // perform actual move
@@ -234,7 +280,18 @@ public:
         return Teams::NONE;
     }
 
+    Square getKing(Teams color) const {
+        for (const auto& pair : teams[color]) {
+            Square square = pair.first;
+            Piece* piece = pair.second;
+            if (piece->Type() == PieceType::KING)
+                return square;
+        }
+        return Square{};
+    }
+
 };
+
 
 using namespace std;
 // Transforms an AlgebraicMove into possible interpreted Moves

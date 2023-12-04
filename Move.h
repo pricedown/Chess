@@ -90,7 +90,7 @@ namespace std {
 }
 
 struct Move {
-    Square from, to; // this is all you need for a completely unique move
+    Square from = { 0, 0 }, to = { 0, 0 }; // this is all you need for a completely unique move
 
     bool operator==(const Move& other) const {
         return (from == other.from) && (to == other.to);
