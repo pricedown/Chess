@@ -50,7 +50,7 @@ public:
 
     //virtual MoveType EvaluateMoveType(Move); // Considered, potentially viable strategy
 
-    CompleteMove LegalMove(const Move& m, const Teams color, const PieceType pieceType) const {
+    CompleteMove LegalMove(const Move& m, const Teams color) const {
         // Invariant:
         // there must be only one CompleteMove for every valid move
 
@@ -65,10 +65,6 @@ public:
 
         // move is possible via piece definition
         if (!piece->PossibleMove(m))
-            return legal;
-
-        // piece is the right type
-        if (getPieceType(m.from) != pieceType)
             return legal;
 
         legal.moveType.captures = (captured != nullptr);
@@ -127,16 +123,23 @@ public:
             }
         }
 
-        // ... king is checked or not
         // ... would put its own king in check or not
+        // I have to check if any piece moving to the piece
+        // that the king is on is a legal move
+        //
+        // 
+
         // ... can castle or not
 
         legal.valid = true;
         return legal;
     }
 
+    bool attacks(Square from, Square to) {
+    }
+
     CompleteMove LegalMove(const CompleteMove& m) {
-        return LegalMove(m.move, m.color, m.pieceType);
+        return LegalMove(m.move, m.color);
     }
 
     // TODO make the relationship between CompleteMove methods and
@@ -146,8 +149,8 @@ public:
 
     // Checks if a move is possible & legal, then performs the move
     // Returns success
-    bool AttemptMove(const Move& move, const Teams color, const PieceType pieceType) 
-    { return AttemptMove(LegalMove(move, color, pieceType)); }
+    bool AttemptMove(const Move& move, const Teams color) 
+    { return AttemptMove(LegalMove(move, color)); }
 
     // You can attempt at making a full move, but you must be precise
     bool AttemptMove(CompleteMove move) {
@@ -155,12 +158,12 @@ public:
             return false;
 
         // the move must be precise
-        if (move != LegalMove(move.move, move.color, move.pieceType))
+        if (move != LegalMove(move.move, move.color))
             return false;
 
         // perform actual move
         
-        // FIXME: add capturing support
+        // capture support
         Piece* captured = getPiece(move.move.to);
         if (captured != nullptr) {
             delete captured;
@@ -203,7 +206,7 @@ public:
             return false;
         }
 
-        // TODO: remove touple entirely after further testing
+        // TODO: remove touple entirely after further testing?
     }
 
     PieceMap getTeamPieces(Teams team) const { return teams[team]; }
