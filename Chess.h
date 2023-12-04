@@ -73,8 +73,11 @@ public:
 
         legal.moveType.captures = (captured != nullptr);
 
+        // can't capture your own piece
         if (legal.color == getPieceTeam(m.to)) {
-            legal.moveType.castles = legal.pieceType == PieceType::KING && getPieceType(m.to) == PieceType::ROOK;
+            std::cerr << "you're trying to capture your own piece" << std::endl;
+            std::cerr << "team: " << legal.color << std::endl;
+            legal.moveType.castles = (legal.pieceType == PieceType::KING) && (getPieceType(m.to) == PieceType::ROOK);
             if (legal.moveType.castles) {
                 for (auto movedPiece : moved) {
                     if (movedPiece == piece)
@@ -250,6 +253,8 @@ vector<CompleteMove> interpretMove(PieceMap teamPieces, AlgebraicMove algebraicM
         }
     }
 
+    if (ret.size() == 0)
+        std::cerr << "no possible moves" << std::endl;
     return ret;
 }
 
