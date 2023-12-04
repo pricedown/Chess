@@ -27,7 +27,7 @@ int main () {
 
         //cout << discoverMove(notation).to.x << " " << discoverMove(notation).to.y << endl;
 
-        if (game.AttemptMove(interpretMove(game.getTeamPieces(tomove) , discoverMove(notation), tomove), tomove))
+        if (game.AttemptMoves(interpretMove(game.getTeamPieces(tomove), discoverMove(notation), tomove), tomove))
         {
             if (tomove == Teams::WHITE) tomove = Teams::BLACK;
             else tomove = Teams::WHITE;

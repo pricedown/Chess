@@ -171,7 +171,7 @@ public:
         return true;
     }
 
-    bool AttemptMove(const std::vector<CompleteMove>& possibleMoves, int color) {
+    bool AttemptMoves(const std::vector<CompleteMove>& possibleMoves, int color) {
 
         // discover which of the moves are legal
         std::vector<CompleteMove> legalMoves;
