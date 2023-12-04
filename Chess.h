@@ -72,6 +72,16 @@ public:
             capturedSquare = m.to;
         }
 
+        legal.moveType.captures = (captured != nullptr);
+        
+        // There are two types of castle moves:
+        // - one is a move where the king tries to capture its own rook
+        // - TODO the other is just O-O or O-O-O: it has no Move, just flagged as a certain castle direction
+        // that way we can make it not part of the piece definition, and just bypass these features... 
+        if (legal.pieceType == PieceType::KING && getPieceType(capturedSquare) == PieceType::ROOK)
+            legal.moveType.castles = true;
+
+        // ensure it's the right piece type
         if (pieceType == PieceType::NONE)
             legal.pieceType = getPieceType(m.from);
         else { 
@@ -82,43 +92,34 @@ public:
             }
         }
 
-        // in the scenario that you're being captured, you cannot move
-        if (pretendMove.to == m.from)
-            return legal;
-        
-        // make sure that if you're capturing, the pretendMove doesn't core dump
-
-
         // check if it's the right color
         if (getPieceTeam(m.from) != color) {
             std::cerr << getPieceTeam(m.from) << " " << color << std::endl;
             return legal;
         }
-
+        
         // move is possible via piece definition
         if (!piece->PossibleMove(m))
             return legal;
+        
+        // in the scenario that you're being captured, you cannot move
+        if (pretendMove.from != pretendMove.to && pretendMove.to == m.from)
+            return legal;
 
-        legal.moveType.captures = (captured != nullptr);
-
-        // can't capture your own piece
+        // can't capture your own piece (unless it's supposed to be a castle)
         if (legal.color == getPieceTeam(capturedSquare)) {
-            legal.moveType.castles = (legal.pieceType == PieceType::KING)
-                && (getPieceType(capturedSquare) == PieceType::ROOK);
-            if (legal.moveType.castles) {
-                for (auto movedPiece : moved) {
-                    if (movedPiece == piece)
-                        return legal;
-                    if (movedPiece == captured)
-                        return legal;
-                }
-                // TODO more castling logic
-                 
-                // check that nothing is in the way
-                
-            } else {
+            if (!legal.moveType.castles)
                 return legal;
+
+            // cannot castle if king or rook have moved
+            for (auto movedPiece : moved) {
+                if (movedPiece == piece)
+                    return legal;
+                if (movedPiece == captured)
+                    return legal;
             }
+
+            // it checks if there's anything inbetween further down!
         }
 
         // TODO
@@ -313,6 +314,7 @@ public:
         }
         return nullptr;
     }
+
 
     Teams getPieceTeam(Square square) const {
         for (int i = 0; i < teams.size(); i++)
