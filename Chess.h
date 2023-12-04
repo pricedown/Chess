@@ -75,8 +75,6 @@ public:
 
         // can't capture your own piece
         if (legal.color == getPieceTeam(m.to)) {
-            std::cerr << "you're trying to capture your own piece" << std::endl;
-            std::cerr << "team: " << getPieceTeam(m.to) << std::endl;
             legal.moveType.castles = (legal.pieceType == PieceType::KING) && (getPieceType(m.to) == PieceType::ROOK);
             if (legal.moveType.castles) {
                 for (auto movedPiece : moved) {
