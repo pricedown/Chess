@@ -81,62 +81,6 @@ AlgebraicMove discoverMove(std::string in) {
     return ret;
 }
 
-// TODO Also optionally read from a file (almost the same thing if you use stringstreams)
-// TODO https://codereview.stackexchange.com/questions/251795/parsing-a-chess-fen
-std::vector<PieceMap> FEN(std::string in) {
-    std::vector<PieceMap> ret(2);
-
-    int x = 0, y = 7;
-    int ptr = 0;
-
-    while (y >= 0 || ptr < in.size()) {
-        if (isdigit(in[ptr])) {
-            for (int i = 0; i < in[ptr] - '0'; i++){
-                if (x < 8) x++;
-            }
-        }
-        else if (in[ptr] != '/') {
-            Square square;
-            square.x = x;
-            square.y = y;
-            switch (in[ptr]) {
-                case 'p': ret[1][square] = new Pawn(2);
-                    break;
-                case 'P': ret[0][square] = new Pawn(0);
-                    break;
-                case 'r': ret[1][square] = new Rook;
-                    break;
-                case 'R': ret[0][square] = new Rook;
-                    break;
-                case 'n': ret[1][square] = new Knight;
-                    break;
-                case 'N': ret[0][square] = new Knight;
-                    break;
-                case 'b': ret[1][square] = new Bishop;
-                    break;
-                case 'B': ret[0][square] = new Bishop;
-                    break;
-                case 'q': ret[1][square] = new Queen;
-                    break;
-                case 'Q': ret[0][square] = new Queen;
-                    break;
-                case 'k': ret[1][square] = new King;
-                    break;
-                case 'K': ret[0][square] = new King;
-                    break;
-            }
-            x++;
-        }
-        if (x > 7) {
-            x = 0;
-            y--;
-        }
-        ptr++;
-    }
-
-    return ret;
-}
-
 void printBoard(const Game& game) {
     // TODO Assuming an 8x8 chessboard (i'll change that later)
     int boardSize = 8;
