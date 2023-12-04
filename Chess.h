@@ -64,6 +64,7 @@ public:
         Piece* captured;
         Square capturedSquare;
         
+        // make sure if you're capturing the pretend move or not
         if ((pretendMove.from != pretendMove.to) && (pretendMove.to == m.to)) {
                 captured = getPiece(pretendMove.from);
                 capturedSquare = pretendMove.from;
@@ -71,6 +72,12 @@ public:
             captured = getPiece(m.to);
             capturedSquare = m.to;
         }
+
+        // in the scenario that you're being captured, you cannot move
+        if (pretendMove.to == m.from)
+            return legal;
+        
+        // make sure that if you're capturing, the pretendMove doesn't core dump
 
         // check if it's the right piece type
         if (getPieceType(m.from) != pieceType) {
@@ -162,14 +169,16 @@ public:
                 if (static_cast<Teams>(i) == color)
                     continue;
 
-                std::cout << "Checking other team for possible checks" << std::endl;
+                // TODO still no clue why this calls twice, doesn't effect it though
+                // std::cout << "Checking team " << i << " for possible checks" << std::endl;
+
                 for (const auto& pair : teams[i]) {
                     Square square = pair.first;
                     if (pair.second == nullptr)
                         continue;
 
                     if (legal.moveType.castles) {
-                        if (LegalMove({square, m.from}, static_cast<Teams>(i), getPieceType(square), { -1, -2 }).valid) {
+                        if (LegalMove({square, m.from}, static_cast<Teams>(i), getPieceType(square), { {-1, -1}, {-2, -2} }).valid) {
                             std::cerr << "Cannot castle out of check!" << std::endl;
                             return legal;
                         }
@@ -218,19 +227,23 @@ public:
             return false;
 
         // perform actual move
-        
+        Square fromSquare = move.move.from;
+        Square toSquare = move.move.to;
+
         // capture support
-        Piece* captured = getPiece(move.move.to);
+        Piece* captured = getPiece(toSquare);
         if (captured != nullptr) {
             delete captured;
-            teams[getPieceTeam(move.move.to)].erase(move.move.to);
+            teams[getPieceTeam(toSquare)].erase(toSquare);
             moved.remove(captured);
         }
-        
-        teams[move.color][move.move.to] = teams[move.color][move.move.from];
-        teams[move.color].erase(move.move.from);
-        
-        moved.push_back(teams[move.color][move.move.from]);
+
+        // update PieceMap
+        teams[move.color][toSquare] = teams[move.color][fromSquare];
+        teams[move.color].erase(fromSquare);
+
+        // update the list of moved pieces
+        moved.push_back(teams[move.color][toSquare]); 
         
         lastMove = move;
         return true;
@@ -254,7 +267,7 @@ public:
             return true;
         } else {
             std::cerr << "There are " << legalMoves.size()
-                << " legal moves possible!" << std::endl;
+                << " legal moves" << std::endl;
             for (auto move : legalMoves) {
                 std::cerr << "Move 1: " << static_cast<int>(move.pieceType) << " " << move.move.from.x << " " << move.move.from.y 
                     << ": " << move.move.to.x << " " << move.move.to.y << std::endl;
@@ -269,16 +282,31 @@ public:
 
     PieceType getPieceType(Square square) const {
         for (auto team : teams) {
-            if (Piece* p = team[square])
+            if (Piece* p = team[square]) {
+                if (p == nullptr) {
+                    // This should never be reached
+                    std::cerr << "Dead square: " << square.x << " " << square.y 
+                        << std::endl;
+                    return PieceType::NONE;
+                }
                 return p->Type();
+            }
         }
         return PieceType::NONE;
     }
 
     Piece* getPiece(Square square) const {
         for (auto team : teams) {
-            if (Piece* p = team[square])
+
+            if (Piece* p = team[square]) {
+                if (p == nullptr) {
+                    // This should never be reached
+                    std::cerr << "Dead square: " << square.x << " " << square.y 
+                        << std::endl;
+                    return nullptr;
+                }
                 return p;
+            }
         }
         return nullptr;
     }
@@ -294,6 +322,13 @@ public:
         for (const auto& pair : teams[color]) {
             Square square = pair.first;
             Piece* piece = pair.second;
+
+            if (piece == nullptr) {
+            // This should never be reached
+                std::cerr << "Dead square: " << square.x << " " << square.y << std::endl;
+                continue;
+            }
+
             if (piece->Type() == PieceType::KING)
                 return square;
         }
@@ -330,7 +365,7 @@ vector<CompleteMove> interpretMove(PieceMap teamPieces, AlgebraicMove algebraicM
     }
 
     if (ret.size() == 0)
-        std::cerr << "no possible moves" << std::endl;
+        std::cerr << "There are 0 possible moves" << std::endl;
     return ret;
 }
 

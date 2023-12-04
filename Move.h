@@ -15,7 +15,7 @@ enum Teams {
 };
 
 struct MoveType {
-    bool captures, checks, promotes, castles, castleDir; // castleDir: 0 = short 1 = long
+    bool captures = false, checks = false, promotes = false, castles = false, castleDir = false; // castleDir: 0 = short 1 = long
 
     bool operator==(const MoveType& other) const {
         return
