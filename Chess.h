@@ -162,11 +162,19 @@ public:
 
         // perform actual move
         
-        moved.push_back(teams[move.color][move.move.from]);
         // FIXME: add capturing support
+        Piece* captured = getPiece(move.move.to);
+        if (captured != nullptr) {
+            delete captured;
+            teams[getPieceTeam(move.move.to)].erase(move.move.to);
+            moved.remove(captured);
+        }
+        
         teams[move.color][move.move.to] = teams[move.color][move.move.from];
         teams[move.color].erase(move.move.from);
-
+        
+        moved.push_back(teams[move.color][move.move.from]);
+        
         lastMove = move;
         return true;
     }

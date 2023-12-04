@@ -11,6 +11,7 @@ using namespace std;
 int main () {
 
     Game game(FEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"));
+    //Game game(FEN("r2qk2r/8/8/8/8/8/8/R2QK2R"));
 
     Teams tomove = Teams::WHITE;
     while (game.getWinner() == Teams::NONE) {
