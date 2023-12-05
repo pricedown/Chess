@@ -124,7 +124,7 @@ public:
     }
     ~Game() = default;
 
-    bool inBounds(Square square) {
+    bool inBounds(const Square& square) const {
         return square.x <= 7 && square.x >= 0
                 && square.y <= 7 && square.y >= 0;
     }
@@ -218,6 +218,9 @@ public:
         legal.valid = false;
         legal.pieceType = pieceType;
         legal.move.promotion = m.promotion;
+
+        if (!inBounds(legal.move.to))
+            return legal;
 
         // check if it's the right color
         if (getPieceTeam(legal.move.from) != color) {
