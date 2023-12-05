@@ -12,8 +12,6 @@ public:
 
 class Pawn : public Piece {
 private:
-    bool moved = false;
-
     int direction;
 public:
     Pawn(int direction = 0) : direction(direction) {}
@@ -42,8 +40,6 @@ public:
         return false;
     }
 
-    bool hasMoved() const { return moved; }
-    void setMoved() { this->moved = true; }
 };
 
 class Knight : public Piece {
@@ -78,10 +74,8 @@ public:
 };
 
 class Rook : public Piece {
-private:
-    bool moved;
 public:
-    Rook(bool moved = false) : moved(moved) {}
+    Rook() {}
 
     virtual PieceType Type() const override { return PieceType::ROOK; }
 
@@ -92,9 +86,6 @@ public:
 
         return ((m.to.x == m.from.x) || (m.to.y == m.from.y));
     }
-    
-    bool hasMoved() const { return moved; }
-    void setMoved() { this->moved = true; }
 };
 
 class Queen : public Piece {
@@ -120,10 +111,8 @@ public:
 };
 
 class King : public Piece {
-private:
-    bool moved;
 public:
-    King(bool moved = false) : moved(moved) {}
+    King() {}
 
     virtual PieceType Type() const override { return PieceType::KING; }
 
@@ -140,6 +129,4 @@ public:
         return false;
     }
     
-    bool hasMoved() const { return moved; }
-    void setMoved() { this->moved = true; }
 };
