@@ -4,10 +4,8 @@
 
 class Piece {
 public:
-    Piece() = default;
-
-    virtual PieceType Type() const { return PieceType::NONE; }
-    virtual bool PossibleMove(const Move&) const { return false; }
+    inline virtual PieceType Type() const { return PieceType::NONE; }
+    inline virtual bool PossibleMove(const Move&) const { return false; }
 };
 
 class Pawn : public Piece {
@@ -15,10 +13,42 @@ private:
     int direction;
 public:
     Pawn(int direction = 0) : direction(direction) {}
+    inline virtual PieceType Type() const override { return PieceType::PAWN; }
+    inline virtual bool PossibleMove(const Move& m) const override;
+};
 
-    virtual PieceType Type() const override { return PieceType::PAWN; }
+class Knight : public Piece {
+public:
+    inline virtual PieceType Type() const override { return PieceType::KNIGHT; }
+    inline virtual bool PossibleMove(const Move& m) const override;
+};
 
-    virtual bool PossibleMove(const Move& m) const override {
+class Bishop : public Piece {
+public:
+    inline virtual PieceType Type() const override { return PieceType::BISHOP; }
+    inline virtual bool PossibleMove(const Move& m) const override; 
+};
+
+class Rook : public Piece {
+public:
+    inline virtual PieceType Type() const override { return PieceType::ROOK; }
+    inline virtual bool PossibleMove(const Move& m) const override; 
+};
+
+class Queen : public Piece {
+private:
+public:
+    inline virtual PieceType Type() const override { return PieceType::QUEEN; }
+    inline virtual bool PossibleMove(const Move& m) const override;
+};
+
+class King : public Piece {
+public:
+    inline virtual PieceType Type() const override { return PieceType::KING; }
+    inline virtual bool PossibleMove(const Move& m) const override;
+};
+
+bool Pawn::PossibleMove(const Move& m) const {
         // piece cannot move to itself
         if (m.to == m.from)
             return false; 
@@ -38,95 +68,64 @@ public:
             return (forwardStep.x == 0);
 
         return false;
-    }
+}
 
-};
+bool Knight::PossibleMove(const Move& m) const {
+    // piece cannot move to itself
+    if (m.from == m.to)
+        return false; 
 
-class Knight : public Piece {
-private:
-public:
-    Knight() = default;
-    virtual PieceType Type() const override { return PieceType::KNIGHT; }
-    virtual bool PossibleMove(const Move& m) const override {
-        if (m.from == m.to)
-            return false; 
-        
-        Square offset = m.to - m.from;
-        if (offset.x == 0 || offset.y == 0)
-            return false; 
-        
-        return (abs(offset.x) + abs(offset.y) == 3);
-    }
-};
+    Square offset = m.to - m.from;
+    if (offset.x == 0 || offset.y == 0)
+        return false; 
 
-class Bishop : public Piece {
-private:
-public:
-    Bishop() = default;
-    virtual PieceType Type() const override { return PieceType::BISHOP; }
-    virtual bool PossibleMove(const Move& m) const override {
-        if (m.from == m.to)
-            return false; 
-        
-        Square offset = m.to - m.from;
-        return (abs(offset.x) == abs(offset.y));
-    }
-};
+    return (abs(offset.x) + abs(offset.y) == 3);
+}
 
-class Rook : public Piece {
-public:
-    Rook() {}
 
-    virtual PieceType Type() const override { return PieceType::ROOK; }
+bool Bishop::PossibleMove(const Move& m) const {
+    // piece cannot move to itself
+    if (m.from == m.to)
+        return false; 
 
-    virtual bool PossibleMove(const Move& m) const override {
-        // piece cannot move to itself
-        if (m.to == m.from)
-            return false; 
+    Square offset = m.to - m.from;
+    return (abs(offset.x) == abs(offset.y));
+}
 
-        return ((m.to.x == m.from.x) || (m.to.y == m.from.y));
-    }
-};
 
-class Queen : public Piece {
-private:
-public:
-    Queen() = default;
+bool Rook::PossibleMove(const Move& m) const {
+    // piece cannot move to itself
+    if (m.to == m.from)
+        return false; 
 
-    virtual PieceType Type() const override { return PieceType::QUEEN; }
+    return ((m.to.x == m.from.x) || (m.to.y == m.from.y));
+}
 
-    virtual bool PossibleMove(const Move& m) const override {
-        if (m.to == m.from)
-            return false; 
-        
-        // combine logic from both rook & bishop
-        Square offset = m.to - m.from;
-        if (abs(offset.x) == abs(offset.y)) 
-            return true;
-        if ((m.to.x == m.from.x) || (m.to.y == m.from.y))
-            return true;
+bool Queen::PossibleMove(const Move& m) const {
+    // piece cannot move to itself
+    if (m.to == m.from)
+        return false; 
 
-        return false;
-    }
-};
+    // combine logic from both rook & bishop
+    Square offset = m.to - m.from;
+    if (abs(offset.x) == abs(offset.y)) 
+        return true;
+    if ((m.to.x == m.from.x) || (m.to.y == m.from.y))
+        return true;
 
-class King : public Piece {
-public:
-    King() {}
+    return false;
+}
 
-    virtual PieceType Type() const override { return PieceType::KING; }
 
-    virtual bool PossibleMove(const Move& m) const override {
-        // piece cannot move to itself
-        if (m.to == m.from)
-            return false; 
+bool King::PossibleMove(const Move& m) const {
+    // piece cannot move to itself
+    if (m.to == m.from)
+        return false; 
 
-        if (abs(m.to.x - m.from.x) <= 1 && abs(m.to.y - m.from.y) <= 1)
-            return true;
-        if (abs(m.to.x - m.from.x) <= 1 || abs(m.to.y - m.from.y) <= 1)
-            return true;
+    if (abs(m.to.x - m.from.x) <= 1 && abs(m.to.y - m.from.y) <= 1)
+        return true;
+    if (abs(m.to.x - m.from.x) <= 1 || abs(m.to.y - m.from.y) <= 1)
+        return true;
 
-        return false;
-    }
-    
-};
+    return false;
+}

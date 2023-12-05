@@ -1,3 +1,5 @@
+#include <functional>
+
 enum class PieceType {
     NONE,
     PAWN,
@@ -23,8 +25,9 @@ struct MoveType {
             (captures == other.captures) &&
             (checks == other.checks) &&
             (promotes == other.promotes) &&
-            (castles == other.castles);
-            (castleDir == other.castleDir);
+            (castles == other.castles) && 
+            (castleDir == other.castleDir) &&
+            (enPassant == other.enPassant);
     }
 
     bool operator!=(const MoveType& other) const { return !(*this == other); }
@@ -45,17 +48,12 @@ struct Square {
     bool operator>=(const int& n) const { return (x >= n && y >= n); }
     bool operator<=(const int& n) const { return (x <= n && y <= n); }
 
-    Square operator+(const Square& other) const {
-        return {x + other.x, y + other.y};
-    }
+    Square operator+(const Square& other) const { return {x + other.x, y + other.y}; }
+    Square operator-(const Square& other) const { return {x - other.x, y - other.y}; }
 
     void operator+=(const Square& other) {
         this->x = x + other.x;
         this->y = y + other.y;
-    }
-
-    Square operator-(const Square& other) const {
-        return {x - other.x, y - other.y};
     }
 
     Square normalized() {
@@ -95,7 +93,7 @@ struct Move {
     PieceType promotion = PieceType::NONE;
 
     bool operator==(const Move& other) const {
-        return (from == other.from) && (to == other.to);
+        return (from == other.from) && (to == other.to) && (promotion == other.promotion);
     }
     bool operator!=(const Move& other) const { return !(*this == other); }
 };
@@ -123,8 +121,6 @@ struct CompleteMove {
             (move == other.move) &&
             (moveType == other.moveType) &&
             (pieceType == other.pieceType);
-        // TODO clean up all of these horrible overloads
-        // and simplify them with cmath
     }
 
     bool operator!=(const CompleteMove& other) const { return !(*this == other); }

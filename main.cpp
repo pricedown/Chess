@@ -15,7 +15,7 @@ int main () {
     const string pawnTest = "8/8/8/8/2p2p2/2p2p2/1PPPPPP1/8";
     const string endGame = "k7/8/1K6/2Q5/8/8/8/8";
     
-    Game game(FEN(endGame));
+    Game game(FEN(startingPos));
 
     Teams tomove = Teams::WHITE;
     Teams winner = Teams::NONE;
