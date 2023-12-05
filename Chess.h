@@ -2,9 +2,11 @@
 #include "Piece.h"
 #include <unordered_map>
 #include <vector>
+#include <algorithm>
 #include <cmath>
 #include <math.h>
 #include <list>
+#include <sstream>
 
 // NOTE draw detection might be costly...
 
@@ -19,12 +21,34 @@ protected:
 
     CompleteMove lastMove;
     int lastReversableMove = 0;
+    std::vector<std::string> positionHistory;
 
     std::list<Piece*> moved;
 
     // Invariants:
     // pieces do not move between the maps
     // pieces cannot occupy the same square
+    
+    void UpdateHistory() {
+        std::ostringstream key;
+
+        // Board position
+        for (int y = 7; y >= 0; --y) {
+            for (int x = 0; x < 8; ++x) {
+                Square square{x, y};
+                Piece* piece = getPiece(square);
+
+                if (piece != nullptr) {
+                    key << static_cast<int>(piece->Type()) << (getPieceTeam(square) == Teams::WHITE ? 'w' : 'b');
+                } else {
+                    key << '-';
+                }
+            }
+            key << "/";
+        }
+
+        positionHistory.push_back(key.str());
+    }
 
     void DeletePiece(Square square) {
         Piece* piece = getPiece(square);
@@ -76,8 +100,10 @@ protected:
     }
 
 public:
-    Game(int teamcount = 2) { teams.reserve(teamcount); }
+    Game(int teamcount = 2) { teams.reserve(teamcount); positionHistory.reserve(100); }
     Game(std::vector<PieceMap> teams) : teams(teams) {
+        positionHistory.reserve(100);
+
         // initialization logic
         for (const auto& team : teams) for (const auto& pair : team) {
             Square square = pair.first;
@@ -174,7 +200,9 @@ public:
         
 
         // check threefold repitition
-        
+        if (std::count(positionHistory.begin(), positionHistory.end(), positionHistory.back()) >= 3)
+            return Teams::ALL;
+
         return Teams::NONE;
     }
 
@@ -445,6 +473,7 @@ public:
         else
             lastReversableMove++;
 
+        UpdateHistory();
         lastMove = move;
         return true;
     }
