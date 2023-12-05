@@ -74,23 +74,13 @@ public:
         CompleteMove legal;
         legal.move = m;
         legal.valid = false;
+        legal.pieceType = pieceType;
 
         // check if it's the right color
         if (getPieceTeam(legal.move.from) != color) {
-            std::cerr << getPieceTeam(legal.move.from) << " " << color << std::endl;
             return legal;
         } else 
             legal.color = color;
-
-        // FIXME wont work for coordinate notation
-        // ensure it's the right piece type
-        if (pieceType == PieceType::NONE)
-            legal.pieceType = getPieceType(m.from);
-        else { 
-            legal.pieceType = pieceType;
-            // if (getPieceType(m.from) != pieceType)
-            //     return legal;
-        }
 
         Piece* captured;
         Square capturedSquare;
@@ -104,35 +94,35 @@ public:
         legal.moveType.captures = (captured != nullptr);
 
         Piece* piece;
+
         // There are two types of castle moves:
         // - one is a move where the king tries to capture its own rook
         // - TODO the other is just O-O or O-O-O: it has no Move, just flagged as a certain castle direction
         // that way we can make it not part of the piece definition, and just bypass these features... 
-
+        
         if (legal.moveType.castles == true) {
-                legal.move.from = getKing(color);
-
-                legal.move.to = legal.move.from;
-                if (legal.moveType.castleDir)
-                    legal.move.to.x = 0;
-                else
-                    legal.move.to.x = 7;
+            legal.move.from = getKing(color);
+            legal.pieceType = PieceType::KING;
+            legal.move.to = legal.move.from;
+            if (legal.moveType.castleDir)
+                legal.move.to.x = 0;
+            else
+                legal.move.to.x = 7;
         }
+        
+        // now we can define the piece ptr, since legal.move.from has been built
+        piece = getPiece(legal.move.from);
 
         // determine if user is trying to castle & complete the move
         if (legal.color == getPieceTeam(capturedSquare)) { 
             if (legal.pieceType == PieceType::KING && getPieceType(capturedSquare) == PieceType::ROOK) {
                 legal.moveType.castles = true;
                 legal.moveType.castleDir = legal.move.to.x == 7;
-            } 
-
-            std::cerr << "Reached 0" << std::endl;
-
+            }
+                
             // you can't normally capture your own piece...
             if (!legal.moveType.castles)
                 return legal;
-
-            std::cerr << "Reached 1" << std::endl;
 
             // qualify that a castle requires the king and rook to not have moved
             for (auto movedPiece : moved) {
@@ -143,12 +133,20 @@ public:
             }
         }
 
-        // now we can define the piece ptr, since legal.move.from has been built
-        piece = getPiece(legal.move.from);
+        // ensure it's the right piece type
+        if (pieceType == PieceType::NONE) {
+            legal.pieceType = getPieceType(legal.move.from);
+        } else if (legal.moveType.castles) {
+            legal.pieceType = PieceType::KING;  // Set to KING for castling
+        } else {
+            if (getPieceType(legal.move.from) != legal.pieceType)
+                return legal;
+        }
 
         // check if move is possible via piece definition
-        if (!piece->PossibleMove(m))
+        if (!legal.moveType.castles && !piece->PossibleMove(m)) {
             return legal;
+        }
         
         // in the scenario that you're being captured, you cannot move
         if (pretendMove.from != pretendMove.to && pretendMove.to == legal.move.from)
@@ -169,6 +167,13 @@ public:
                     }
                 }
                 break;
+            case PieceType::KING:
+                if (abs(offset.x) > 1 || abs(offset.y) > 1) {
+                    if (!legal.moveType.castles)
+                        return legal;
+                }
+                
+                break;
         }
 
         // ... FIXME
@@ -178,16 +183,21 @@ public:
             
             Square step = offset.normalized();
             Square scan = legal.move.from;
-
-            while (scan != legal.move.to) {
-                Piece* p = getPiece(scan);
-                if ((p != nullptr) && (p != piece) && (scan != pretendMove.from)) {
-                    return legal;
-                } else if (scan == pretendMove.to) {
-                    return legal;
-                }
-
+            while (true) {
                 scan += step;
+                if (scan == legal.move.to)
+                    break;
+
+                if (scan == pretendMove.to)
+                    return legal;
+
+                if (scan == pretendMove.from)
+                    continue;
+
+                if (getPiece(scan) == nullptr)
+                    continue;
+
+                return legal;
             }
         }
 
@@ -196,10 +206,16 @@ public:
             // it is the first iteration / check
 
             Square king;
-            if (legal.pieceType == PieceType::KING) 
+            if (legal.pieceType == PieceType::KING) {
                 king = legal.move.to;
-            else 
-                king = getKing(color);
+                if (legal.moveType.castles) {
+                    if (legal.moveType.castleDir)
+                        king.x = 6;
+                    else
+                        king.x = 2;
+                } 
+            } else 
+            king = getKing(color);
 
             for (int i = 0; i < teams.size(); i++) {
                 if (static_cast<Teams>(i) == color)
@@ -210,8 +226,10 @@ public:
 
                 for (const auto& pair : teams[i]) {
                     Square square = pair.first;
-                    if (pair.second == nullptr)
+                    if (pair.second == nullptr) {
+                        std::cerr << "dead square: " << pair.first.x << pair.first.y << std::endl;
                         continue;
+                    }
 
                     if (legal.moveType.castles) {
                         if (LegalMove({square, legal.move.from}, static_cast<Teams>(i), getPieceType(square), { {-1, -1}, {-2, -2} }).valid) {
@@ -232,7 +250,7 @@ public:
                 }
             }
         }
-
+       
         legal.valid = true;
         return legal;
     }
@@ -263,8 +281,8 @@ public:
         // perform actual move
         if (move.moveType.castles) {
             if (move.moveType.castleDir) {
-                MovePiece({ move.move.from, { 6, move.move.from.y }}, move.color); // move king
-                MovePiece({ { 7, move.move.from.y }, { 2, move.move.from.y }}, move.color); // move rook
+                MovePiece({ move.move.from, { 5, move.move.from.y }}, move.color); // move king
+                MovePiece({ { 7, move.move.from.y }, { 4, move.move.from.y }}, move.color); // move rook
             } else {
                 MovePiece({ move.move.from, { 2, move.move.from.y }}, move.color); // move king
                 MovePiece({ { 0, move.move.from.y }, { 3, move.move.from.y }}, move.color); // move rook
@@ -386,12 +404,24 @@ vector<CompleteMove> interpretMove(PieceMap teamPieces, AlgebraicMove algebraicM
     // complete the partially created move using Piece definitions
     for (auto pieceMap : teamPieces) {
         Move move = { pieceMap.first, algebraicMove.to };
-        if (pieceMap.second && pieceMap.second->PossibleMove(move)) {
+        if (!pieceMap.second) {
+            std::cerr << "Dead Square: " << pieceMap.first.x << " " << pieceMap.first.y << std::endl;
+            continue;
+        }
+
+        if (pieceMap.second->PossibleMove(move)) {
             // add a complete, possible (not necessarily legal) move to vector
             CompleteMove complete = partial;
             complete.move = move;
             ret.push_back(complete);
-        }
+        } 
+        // else if (partial.pieceType == PieceType::KING) {
+        //     partial.moveType.castles = true;   
+        //     CompleteMove complete = partial;
+        //     complete.move = move;
+        //     ret.push_back(complete);
+        // }
+
     }
 
     if (ret.size() == 0)

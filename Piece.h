@@ -132,7 +132,12 @@ public:
         if (m.to == m.from)
             return false; 
 
-        return ( (abs(m.to.x - m.from.x) <= 1) && (abs(m.to.y - m.from.y) <= 1) );
+        if (abs(m.to.x - m.from.x) <= 1 && abs(m.to.y - m.from.y) <= 1)
+            return true;
+        if (abs(m.to.x - m.from.x) <= 1 || abs(m.to.y - m.from.y) <= 1)
+            return true;
+
+        return false;
     }
     
     bool hasMoved() const { return moved; }
