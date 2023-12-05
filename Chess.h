@@ -173,7 +173,6 @@ public:
         }
 
         // check threefold repitition
-
         
         return Teams::NONE;
     }

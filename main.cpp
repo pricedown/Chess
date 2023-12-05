@@ -44,4 +44,6 @@ int main () {
     }
 
     cout << "Winner: " << winner << endl;
+    cout << "Final board: " << endl << endl;
+    printBoard(game);
 }
