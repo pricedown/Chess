@@ -10,8 +10,10 @@ using namespace std;
 
 int main () {
 
-    //Game game(FEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"));
-    Game game(FEN("r2qk2r/8/8/8/8/8/8/R2QK2R"));
+    const string startingPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+    const string castleTest = "r2k3r/8/8/8/8/8/8/R2K3R";
+
+    Game game(FEN(castleTest));
 
     Teams tomove = Teams::WHITE;
     while (game.getWinner() == Teams::NONE) {

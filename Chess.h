@@ -26,6 +26,23 @@ protected:
     // pieces do not move between the maps
     // pieces cannot occupy the same square
 
+    void MovePiece(Move move, Teams color) {
+        // capture support
+        Piece* captured = getPiece(move.to);
+        if (captured != nullptr) {
+            delete captured;
+            teams[getPieceTeam(move.to)].erase(move.to);
+            moved.remove(captured);
+        }
+
+        // update PieceMap
+        teams[color][move.to] = teams[color][move.from];
+        teams[color].erase(move.from);
+
+        // update the list of moved pieces
+        moved.push_back(teams[color][move.to]); 
+    }
+
 public:
     Game(int teamcount = 2) { teams.reserve(teamcount); }
     Game(std::vector<PieceMap> teams) : teams(teams) {
@@ -65,13 +82,14 @@ public:
         } else 
             legal.color = color;
 
+        // FIXME wont work for coordinate notation
         // ensure it's the right piece type
         if (pieceType == PieceType::NONE)
             legal.pieceType = getPieceType(m.from);
         else { 
             legal.pieceType = pieceType;
-            if (getPieceType(m.from) != pieceType)
-                return legal;
+            // if (getPieceType(m.from) != pieceType)
+            //     return legal;
         }
 
         Piece* captured;
@@ -108,9 +126,13 @@ public:
                 legal.moveType.castleDir = legal.move.to.x == 7;
             } 
 
+            std::cerr << "Reached 0" << std::endl;
+
             // you can't normally capture your own piece...
             if (!legal.moveType.castles)
                 return legal;
+
+            std::cerr << "Reached 1" << std::endl;
 
             // qualify that a castle requires the king and rook to not have moved
             for (auto movedPiece : moved) {
@@ -239,27 +261,22 @@ public:
             return false;
 
         // perform actual move
-        Square fromSquare = move.move.from;
-        Square toSquare = move.move.to;
-
-        // capture support
-        Piece* captured = getPiece(toSquare);
-        if (captured != nullptr) {
-            delete captured;
-            teams[getPieceTeam(toSquare)].erase(toSquare);
-            moved.remove(captured);
+        if (move.moveType.castles) {
+            if (move.moveType.castleDir) {
+                MovePiece({ move.move.from, { 6, move.move.from.y }}, move.color); // move king
+                MovePiece({ { 7, move.move.from.y }, { 2, move.move.from.y }}, move.color); // move rook
+            } else {
+                MovePiece({ move.move.from, { 2, move.move.from.y }}, move.color); // move king
+                MovePiece({ { 0, move.move.from.y }, { 3, move.move.from.y }}, move.color); // move rook
+            }
+        } else {
+            MovePiece(move.move, move.color);
         }
 
-        // update PieceMap
-        teams[move.color][toSquare] = teams[move.color][fromSquare];
-        teams[move.color].erase(fromSquare);
-
-        // update the list of moved pieces
-        moved.push_back(teams[move.color][toSquare]); 
-        
         lastMove = move;
         return true;
     }
+
 
     bool AttemptMoves(const std::vector<CompleteMove>& possibleMoves, int color) {
 
