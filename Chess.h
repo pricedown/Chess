@@ -119,6 +119,8 @@ public:
                     break;
             }
         }
+
+        UpdateHistory();
     }
     ~Game() = default;
 
@@ -197,7 +199,6 @@ public:
         // check fifty move rule
         if (lastReversableMove == 50)
             return Teams::ALL;
-        
 
         // check threefold repitition
         if (std::count(positionHistory.begin(), positionHistory.end(), positionHistory.back()) >= 3)
@@ -477,7 +478,6 @@ public:
         lastMove = move;
         return true;
     }
-
 
     bool AttemptMoves(const std::vector<CompleteMove>& possibleMoves, int color) {
 
