@@ -11,8 +11,7 @@ using namespace std;
 int main () {
 
     const string startingPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-    const string castleTest = "r2k3r/8/8/8/8/8/8/R2K3R";
-
+    const string castleTest = "r3k2r/8/8/8/8/8/8/R3K2R";
     Game game(FEN(castleTest));
 
     Teams tomove = Teams::WHITE;

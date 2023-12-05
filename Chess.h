@@ -126,10 +126,14 @@ public:
 
             // qualify that a castle requires the king and rook to not have moved
             for (auto movedPiece : moved) {
-                if (movedPiece == piece)
+                if (movedPiece == piece) {
+                    // std::cerr << "king has already moved, cannot castle" << std::endl;
                     return legal;
-                if (movedPiece == captured)
+                }
+                if (movedPiece == captured) {
+                    // std::cerr << "that rook has already moved, cannot castle" << std::endl;
                     return legal;
+                }
             }
         }
 
@@ -281,8 +285,8 @@ public:
         // perform actual move
         if (move.moveType.castles) {
             if (move.moveType.castleDir) {
-                MovePiece({ move.move.from, { 5, move.move.from.y }}, move.color); // move king
-                MovePiece({ { 7, move.move.from.y }, { 4, move.move.from.y }}, move.color); // move rook
+                MovePiece({ move.move.from, { 6, move.move.from.y }}, move.color); // move king
+                MovePiece({ { 7, move.move.from.y }, { 5, move.move.from.y }}, move.color); // move rook
             } else {
                 MovePiece({ move.move.from, { 2, move.move.from.y }}, move.color); // move king
                 MovePiece({ { 0, move.move.from.y }, { 3, move.move.from.y }}, move.color); // move rook
