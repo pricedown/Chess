@@ -76,6 +76,7 @@ public:
 
         Piece* captured;
         Square capturedSquare;
+
         // detect if capturing the pretend move
         if ((pretendMove.from != pretendMove.to) && (pretendMove.to == legal.move.to))
             capturedSquare = pretendMove.from;
@@ -89,51 +90,47 @@ public:
         // - one is a move where the king tries to capture its own rook
         // - TODO the other is just O-O or O-O-O: it has no Move, just flagged as a certain castle direction
         // that way we can make it not part of the piece definition, and just bypass these features... 
-        //
-        // determine if user is trying to castle & complete the move
-        if (legal.color == getPieceTeam(capturedSquare)) { 
-            if (legal.pieceType == PieceType::KING && getPieceType(capturedSquare) == PieceType::ROOK) {
-                legal.moveType.castles = true;
-                legal.moveType.castleDir = legal.move.to.x == 7;
-            } else if (legal.moveType.castles == true) {
+
+        if (legal.moveType.castles == true) {
                 legal.move.from = getKing(color);
-                piece = getPiece(legal.move.from);
+
                 legal.move.to = legal.move.from;
                 if (legal.moveType.castleDir)
                     legal.move.to.x = 0;
                 else
                     legal.move.to.x = 7;
-            } else
-            return legal;
+        }
 
+        // determine if user is trying to castle & complete the move
+        if (legal.color == getPieceTeam(capturedSquare)) { 
+            if (legal.pieceType == PieceType::KING && getPieceType(capturedSquare) == PieceType::ROOK) {
+                legal.moveType.castles = true;
+                legal.moveType.castleDir = legal.move.to.x == 7;
+            } 
+
+            // you can't normally capture your own piece...
+            if (!legal.moveType.castles)
+                return legal;
+
+            // qualify that a castle requires the king and rook to not have moved
             for (auto movedPiece : moved) {
                 if (movedPiece == piece)
                     return legal;
                 if (movedPiece == captured)
                     return legal;
             }
+        }
 
-        } else
-            piece = getPiece(m.from);
-        
+        // now we can define the piece ptr, since legal.move.from has been built
+        piece = getPiece(legal.move.from);
 
-        // move is possible via piece definition
+        // check if move is possible via piece definition
         if (!piece->PossibleMove(m))
             return legal;
         
         // in the scenario that you're being captured, you cannot move
         if (pretendMove.from != pretendMove.to && pretendMove.to == legal.move.from)
             return legal;
-
-        // can't capture your own piece (unless it's supposed to be a castle)
-        if (legal.color == getPieceTeam(capturedSquare)) {
-            if (!legal.moveType.castles)
-                return legal;
-
-            // cannot castle if king or rook have moved
-            // it checks if there's anything inbetween further down!
-        }
-
 
         Square offset = (legal.move.to - legal.move.from);
         switch (legal.pieceType) {
