@@ -101,7 +101,7 @@ public:
                 && square.y <= 7 && square.y >= 0;
     }
 
-    bool isCheckMated(Teams color) {
+    bool hasMoves(Teams color) {
         for (auto& pair : teams[color]) {
             Move move;
             move.from = pair.first;
@@ -122,13 +122,13 @@ public:
 
                 if (piece->PossibleMove(move)) {
                     if (LegalMove(move, color, pieceType).valid) {
-                        return false;
+                        return true;
                     }
                 }
             }
         }
 
-        return true;
+        return false;
     }
 
     Teams getWinner() {
@@ -139,18 +139,19 @@ public:
             if (i != color)
                 tomove = static_cast<Teams>(i);
 
-        // check checkmate
-        if (isCheckMated(color))
-            return tomove;
+        // check checkmate & stalemate
+        if (!hasMoves(color)) {
+            if (!hasMoves(tomove))
+                return Teams::ALL;
+            else
+                return tomove;
+        }
 
         // check fifty move rule
         if (lastReversableMove == 50)
             return Teams::ALL;
 
         // check threefold repitition
-        
-
-        // check stalemate
     }
 
     //virtual MoveType EvaluateMoveType(Move); // Considered, potentially viable strategy
