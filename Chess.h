@@ -104,8 +104,8 @@ public:
     bool hasMoves(Teams color) {
         for (auto& pair : teams[color]) {
             Move move;
+            
             move.from = pair.first;
-
             Piece* piece = pair.second;
             PieceType pieceType = getPieceType(move.from);
 
@@ -117,13 +117,10 @@ public:
             // iterate through all the squares it can go to
             // (maybe make a virtual iterator for this in the future)
             for (move.to.y = 0; move.to.y < 8; move.to.y++) for (move.to.x = 0; move.to.x < 8; move.to.x++) {
-                if (inBounds(move.to))
-                    continue;
-
-                if (piece->PossibleMove(move)) {
-                    if (LegalMove(move, color, pieceType).valid) {
-                        return true;
-                    }
+                //if (inBounds(move.to)) continue;
+                if (LegalMove(move, color, pieceType).valid) {
+                    std::cout << "Possible move: " << move.from.x << move.from.y << move.to.x << move.to.y << std::endl;
+                    return true;
                 }
             }
         }
@@ -132,19 +129,15 @@ public:
     }
 
     Teams getWinner() {
-        return Teams::NONE; // TODO determine if anyone has won the game
-        Teams color = lastMove.color;
-        Teams tomove;
+        Teams tomove = lastMove.color;
+        Teams color;
         for (int i = 0; i < teams.size(); i++)
-            if (i != color)
-                tomove = static_cast<Teams>(i);
+            if (i != tomove)
+                color = static_cast<Teams>(i);
 
-        // check checkmate & stalemate
+        // check checkmate
         if (!hasMoves(color)) {
-            if (!hasMoves(tomove))
-                return Teams::ALL;
-            else
-                return tomove;
+            return tomove;
         }
 
         // check fifty move rule
@@ -152,6 +145,11 @@ public:
             return Teams::ALL;
 
         // check threefold repitition
+        //
+        //
+
+        
+        return Teams::NONE;
     }
 
     //virtual MoveType EvaluateMoveType(Move); // Considered, potentially viable strategy
