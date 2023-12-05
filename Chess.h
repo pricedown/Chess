@@ -155,10 +155,6 @@ public:
 
     Teams getWinner() {
 
-        // check fifty move rule
-        if (lastReversableMove == 50)
-            return Teams::ALL;
-        
         Teams tomove = lastMove.color;
         Teams color;
         for (int i = 0; i < teams.size(); i++)
@@ -171,6 +167,11 @@ public:
                 return Teams::ALL;
             return tomove;
         }
+        
+        // check fifty move rule
+        if (lastReversableMove == 50)
+            return Teams::ALL;
+        
 
         // check threefold repitition
         
