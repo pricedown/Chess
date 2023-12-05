@@ -91,21 +91,31 @@ public:
         // that way we can make it not part of the piece definition, and just bypass these features... 
         //
         // determine if user is trying to castle & complete the move
-        if (legal.pieceType == PieceType::KING && getPieceType(capturedSquare) == PieceType::ROOK) {
-            legal.moveType.castles = true;
-            legal.moveType.castleDir = legal.move.to.x == 7;
-        }
-        else if (legal.moveType.castles == true) {
-            legal.move.from = getKing(color);
-            piece = getPiece(legal.move.from);
-            legal.move.to = legal.move.from;
-            if (legal.moveType.castleDir)
-                legal.move.to.x = 0;
-            else
-                legal.move.to.x = 7;
+        if (legal.color == getPieceTeam(capturedSquare)) { 
+            if (legal.pieceType == PieceType::KING && getPieceType(capturedSquare) == PieceType::ROOK) {
+                legal.moveType.castles = true;
+                legal.moveType.castleDir = legal.move.to.x == 7;
+            } else if (legal.moveType.castles == true) {
+                legal.move.from = getKing(color);
+                piece = getPiece(legal.move.from);
+                legal.move.to = legal.move.from;
+                if (legal.moveType.castleDir)
+                    legal.move.to.x = 0;
+                else
+                    legal.move.to.x = 7;
+            } else
+            return legal;
+
+            for (auto movedPiece : moved) {
+                if (movedPiece == piece)
+                    return legal;
+                if (movedPiece == captured)
+                    return legal;
+            }
+
         } else
             piece = getPiece(m.from);
-
+        
 
         // move is possible via piece definition
         if (!piece->PossibleMove(m))
@@ -121,13 +131,6 @@ public:
                 return legal;
 
             // cannot castle if king or rook have moved
-            for (auto movedPiece : moved) {
-                if (movedPiece == piece)
-                    return legal;
-                if (movedPiece == captured)
-                    return legal;
-            }
-
             // it checks if there's anything inbetween further down!
         }
 
