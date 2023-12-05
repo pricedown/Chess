@@ -81,6 +81,9 @@ public:
             Square square = pair.first;
             Piece* piece = pair.second;
 
+            if (!inBounds(pair.first))
+                continue;
+
             switch (piece->Type()) {
                 case PieceType::PAWN:
                     if (square.y != 1 && square.y != 6)
@@ -91,8 +94,56 @@ public:
     }
     ~Game() = default;
 
+    bool inBounds(Square square) {
+        return square.x <= 7 && square.x >= 0
+                && square.y <= 7 && square.y >= 0;
+    }
+
+    bool isCheckMated(Teams color) {
+        for (auto& pair : teams[color]) {
+            Move move;
+            move.from = pair.first;
+
+            Piece* piece = pair.second;
+            PieceType pieceType = getPieceType(move.from);
+
+            if (piece == nullptr) {
+                std::cerr << "Dead square: " << move.from.x << move.from.y << std::endl;
+                continue;
+            }
+
+            // iterate through all the squares it can go to
+            // (maybe make a virtual iterator for this in the future)
+            for (move.to.y = 0; move.to.y < 8; move.to.y++) for (move.to.x = 0; move.to.x < 8; move.to.x++) {
+                if (inBounds(move.to))
+                    continue;
+
+                if (piece->PossibleMove(move)) {
+                    if (LegalMove(move, color, pieceType).valid) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
     Teams getWinner() {
         return Teams::NONE; // TODO determine if anyone has won the game
+        Teams color = lastMove.color;
+
+        // check checkmate
+        if (isCheckMated(color)) {
+            for (int i = 0; i < teams.size(); i++)
+                if (i != color)
+                    return static_cast<Teams>(i);
+        }
+
+        // check fifty move rule
+
+        // check threefold repitition
+        // check stalemate
     }
 
     //virtual MoveType EvaluateMoveType(Move); // Considered, potentially viable strategy
