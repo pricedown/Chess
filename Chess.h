@@ -6,8 +6,6 @@
 #include <math.h>
 #include <list>
 
-// TODO maybe rewrite everything with std::find_if
-
 // NOTE draw detection might be costly...
 
 typedef std::unordered_map<Square, Piece*> PieceMap;
@@ -43,6 +41,30 @@ protected:
         moved.push_back(teams[color][move.to]); 
     }
 
+    void PromotePiece(Move move, Teams color, PieceType type) {
+
+        Piece* piece = getPiece(move.from);
+        delete piece;
+        teams[color].erase(move.from);
+        moved.remove(piece);
+
+        switch (type) {
+            case PieceType::KNIGHT:
+                teams[color][move.to] = new Knight();
+                break;
+            case PieceType::BISHOP:
+                teams[color][move.to] = new Bishop();
+            break;
+            case PieceType::ROOK:
+                teams[color][move.to] = new Rook();
+            break;
+            case PieceType::QUEEN:
+                teams[color][move.to] = new Queen();
+            break;
+        }
+        moved.push_back(teams[color][move.to]);
+    }
+
 public:
     Game(int teamcount = 2) { teams.reserve(teamcount); }
     Game(std::vector<PieceMap> teams) : teams(teams) {
@@ -75,6 +97,7 @@ public:
         legal.move = m;
         legal.valid = false;
         legal.pieceType = pieceType;
+        legal.move.promotion = m.promotion;
 
         // check if it's the right color
         if (getPieceTeam(legal.move.from) != color) {
@@ -147,6 +170,9 @@ public:
                 return legal;
         }
 
+        if (legal.move.promotion != PieceType::NONE && legal.pieceType != PieceType::PAWN)
+            return legal;
+
         // check if move is possible via piece definition
         if (!legal.moveType.castles && !piece->PossibleMove(m)) {
             return legal;
@@ -170,6 +196,13 @@ public:
                             return legal;
                     }
                 }
+
+                if (legal.move.to.y == 7 || legal.move.to.y == 0) {
+                    // default to queen for promoting
+                    if (legal.move.promotion == PieceType::NONE)
+                        legal.move.promotion = PieceType::QUEEN;
+                }               
+
                 break;
             case PieceType::KING:
                 if (abs(offset.x) > 1 || abs(offset.y) > 1) {
@@ -293,6 +326,10 @@ public:
             }
         } else {
             MovePiece(move.move, move.color);
+        }
+
+        if (move.move.promotion != PieceType::NONE) {
+            PromotePiece(move.move, move.color, move.move.promotion);
         }
 
         lastMove = move;

@@ -12,7 +12,8 @@ int main () {
 
     const string startingPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     const string castleTest = "r3k2r/8/8/8/8/8/8/R3K2R";
-    Game game(FEN(castleTest));
+    const string pawnTest = "8/1pP1pP2/8/2P2P2/2p1p3/8/1Pp1Pp2/8";
+    Game game(FEN(pawnTest));
 
     Teams tomove = Teams::WHITE;
     while (game.getWinner() == Teams::NONE) {
