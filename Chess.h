@@ -18,6 +18,8 @@ protected:
     std::vector<PieceMap> teams;
 
     CompleteMove lastMove;
+    int lastReversableMove = 0;
+
     std::list<Piece*> moved;
 
     // Invariants:
@@ -132,17 +134,22 @@ public:
     Teams getWinner() {
         return Teams::NONE; // TODO determine if anyone has won the game
         Teams color = lastMove.color;
+        Teams tomove;
+        for (int i = 0; i < teams.size(); i++)
+            if (i != color)
+                tomove = static_cast<Teams>(i);
 
         // check checkmate
-        if (isCheckMated(color)) {
-            for (int i = 0; i < teams.size(); i++)
-                if (i != color)
-                    return static_cast<Teams>(i);
-        }
+        if (isCheckMated(color))
+            return tomove;
 
         // check fifty move rule
+        if (lastReversableMove == 50)
+            return Teams::ALL;
 
         // check threefold repitition
+        
+
         // check stalemate
     }
 
@@ -385,6 +392,7 @@ public:
 
         // perform actual move
         if (move.moveType.castles) {
+            // castles are technically two 'moves'
             if (move.moveType.castleDir) {
                 MovePiece({ move.move.from, { 6, move.move.from.y }}, move.color); // move king
                 MovePiece({ { 7, move.move.from.y }, { 5, move.move.from.y }}, move.color); // move rook
@@ -394,14 +402,23 @@ public:
             }
         } else {
             MovePiece(move.move, move.color);
+            
+            // en passant deletes the lastMove hack
             if (move.moveType.enPassant) {
                 DeletePiece(lastMove.move.to);   
             }
         }
 
+        // promotions
         if (move.move.promotion != PieceType::NONE) {
             PromotePiece(move.move, move.color, move.move.promotion);
         }
+
+        // update fifty move rule
+        if (move.moveType.captures || move.pieceType == PieceType::PAWN)
+            lastReversableMove = 0;
+        else
+            lastReversableMove++;
 
         lastMove = move;
         return true;
