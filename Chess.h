@@ -128,7 +128,37 @@ public:
         return false;
     }
 
+    bool isChecked(Teams color) {
+        Teams otherTeam;
+        Square kingSquare = getKing(color);
+
+        for (int i = 0; i < teams.size(); i++) {
+            if (i != color)
+                otherTeam = static_cast<Teams>(i);
+
+            for (auto& pair : teams[otherTeam]) {
+                Move move = { pair.first, kingSquare };
+
+                if (pair.second == nullptr) {
+                    std::cerr << "Dead square: " << move.from.x << move.from.y << std::endl;
+                    continue;
+                }
+
+                if (LegalMove(move, otherTeam, getPieceType(move.from)).valid) {
+                    std::cout << "Checking move: " << move.from.x << move.from.y << move.to.x << move.to.y << std::endl;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     Teams getWinner() {
+
+        // check fifty move rule
+        if (lastReversableMove == 50)
+            return Teams::ALL;
+        
         Teams tomove = lastMove.color;
         Teams color;
         for (int i = 0; i < teams.size(); i++)
@@ -137,16 +167,12 @@ public:
 
         // check checkmate
         if (!hasMoves(color)) {
+            if (!isChecked(color))
+                return Teams::ALL;
             return tomove;
         }
 
-        // check fifty move rule
-        if (lastReversableMove == 50)
-            return Teams::ALL;
-
         // check threefold repitition
-        //
-        //
 
         
         return Teams::NONE;
