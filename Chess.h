@@ -24,6 +24,14 @@ protected:
     // pieces do not move between the maps
     // pieces cannot occupy the same square
 
+    void DeletePiece(Square square) {
+        Piece* piece = getPiece(square);
+        Teams color = getPieceTeam(square);
+        delete piece;
+        teams[color].erase(square);
+        moved.remove(piece);
+    }
+
     void MovePiece(Move move, Teams color) {
         // capture support
         Piece* captured = getPiece(move.to);
@@ -185,10 +193,19 @@ public:
         Square offset = (legal.move.to - legal.move.from);
         switch (legal.pieceType) {
             case PieceType::PAWN:
+
+                // detect en passant
+                if (lastMove.pieceType == PieceType::PAWN && abs(lastMove.move.from.y - lastMove.move.to.y) > 1) {
+                    if (legal.move.to.x == lastMove.move.from.x && legal.move.to.y + offset.y == lastMove.move.from.y) {
+                        legal.moveType.enPassant = true;
+                        legal.moveType.captures = true;
+                    }
+                }
+
                 // a pawn captures if and only if it moves sideways
-                
                 if (legal.moveType.captures != (offset.x != 0))
                     return legal;
+
 
                 if (abs(offset.y) >= 2) {
                     for (auto movedPiece : moved) {
@@ -326,6 +343,9 @@ public:
             }
         } else {
             MovePiece(move.move, move.color);
+            if (move.moveType.enPassant) {
+                DeletePiece(lastMove.move.to);   
+            }
         }
 
         if (move.move.promotion != PieceType::NONE) {

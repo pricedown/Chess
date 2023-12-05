@@ -12,7 +12,7 @@ int main () {
 
     const string startingPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     const string castleTest = "r3k2r/8/8/8/8/8/8/R3K2R";
-    const string pawnTest = "8/1pP1pP2/8/2P2P2/2p1p3/8/1Pp1Pp2/8";
+    const string pawnTest = "8/8/8/8/2p2p2/2p2p2/1PPPPPP1/8";
     Game game(FEN(pawnTest));
 
     Teams tomove = Teams::WHITE;
