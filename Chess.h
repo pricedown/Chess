@@ -50,7 +50,7 @@ protected:
         positionHistory.push_back(key.str());
     }
 
-    void DeletePiece(Square square) {
+    void DeletePiece(const Square& square) {
         Piece* piece = getPiece(square);
         Teams color = getPieceTeam(square);
         delete piece;
@@ -58,7 +58,7 @@ protected:
         moved.remove(piece);
     }
 
-    void MovePiece(Move move, Teams color) {
+    void MovePiece(const Move& move, const Teams& color) {
         // capture support
         Piece* captured = getPiece(move.to);
         if (captured != nullptr) {
@@ -75,7 +75,7 @@ protected:
         moved.push_back(teams[color][move.to]); 
     }
 
-    void PromotePiece(Move move, Teams color, PieceType type) {
+    void PromotePiece(const Move& move, const Teams& color, const PieceType& type) {
 
         Piece* piece = getPiece(move.from);
         delete piece;
@@ -129,7 +129,7 @@ public:
                 && square.y <= 7 && square.y >= 0;
     }
 
-    bool hasMoves(Teams color) {
+    bool hasMoves(const Teams& color) const {
         for (auto& pair : teams[color]) {
             Move move;
             
@@ -156,7 +156,7 @@ public:
         return false;
     }
 
-    bool isChecked(Teams color) {
+    bool isChecked(const Teams& color) const {
         Teams otherTeam;
         Square kingSquare = getKing(color);
 
@@ -181,7 +181,7 @@ public:
         return false;
     }
 
-    Teams getWinner() {
+    Teams getWinner() const {
 
         Teams tomove = lastMove.color;
         Teams color;
@@ -370,9 +370,9 @@ public:
             }
         }
 
-        // ... check that it's not moving into check
+        // check that it's not moving into check
         if (pretendMove.from == pretendMove.to) {
-            // it is the first iteration / check
+            // reached if it is the first iteration
 
             Square king;
             if (legal.pieceType == PieceType::KING) {
@@ -424,7 +424,7 @@ public:
         return legal;
     }
 
-    CompleteMove LegalMove(const CompleteMove& m) {
+    CompleteMove LegalMove(const CompleteMove& m) const {
         return LegalMove(m.move, m.color, m.pieceType);
     }
 
@@ -439,7 +439,7 @@ public:
     { return AttemptMove(LegalMove(move, color, pieceType)); }
 
     // You can attempt at making a full move, but you must be precise
-    bool AttemptMove(CompleteMove move) {
+    bool AttemptMove(const CompleteMove& move) {
         if (!move.valid)
             return false;
 
@@ -511,9 +511,9 @@ public:
         // TODO: remove touple entirely after further testing?
     }
 
-    PieceMap getTeamPieces(Teams team) const { return teams[team]; }
+    PieceMap getTeamPieces(const Teams& team) const { return teams[team]; }
 
-    PieceType getPieceType(Square square) const {
+    PieceType getPieceType(const Square& square) const {
         for (auto team : teams) {
             if (Piece* p = team[square]) {
                 if (p == nullptr) {
@@ -528,7 +528,7 @@ public:
         return PieceType::NONE;
     }
 
-    Piece* getPiece(Square square) const {
+    Piece* getPiece(const Square& square) const {
         for (auto team : teams) {
 
             if (Piece* p = team[square]) {
@@ -545,14 +545,14 @@ public:
     }
 
 
-    Teams getPieceTeam(Square square) const {
+    Teams getPieceTeam(const Square& square) const {
         for (int i = 0; i < teams.size(); i++)
             if (teams[i].count(square) > 0)
                 return static_cast<Teams>(i);
         return Teams::NONE;
     }
 
-    Square getKing(Teams color) const {
+    Square getKing(const Teams& color) const {
         for (const auto& pair : teams[color]) {
             Square square = pair.first;
             Piece* piece = pair.second;
@@ -574,7 +574,7 @@ public:
 
 using namespace std;
 // Transforms an AlgebraicMove into possible interpreted Moves
-vector<CompleteMove> interpretMove(PieceMap teamPieces, AlgebraicMove algebraicMove, Teams color) {
+vector<CompleteMove> interpretMove(const PieceMap& teamPieces, const AlgebraicMove& algebraicMove, const Teams& color) {
     vector<CompleteMove> ret;
 
     CompleteMove partial;
