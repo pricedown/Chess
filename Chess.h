@@ -57,53 +57,62 @@ public:
         CompleteMove legal;
         legal.move = m;
         legal.valid = false;
-        legal.color = color;
 
-        Piece* piece = getPiece(m.from);
-        Piece* captured;
-        Square capturedSquare;
-        
-        // make sure if you're capturing the pretend move or not
-        if ((pretendMove.from != pretendMove.to) && (pretendMove.to == m.to)) {
-                captured = getPiece(pretendMove.from);
-                capturedSquare = pretendMove.from;
-        } else {
-            captured = getPiece(m.to);
-            capturedSquare = m.to;
-        }
-
-        legal.moveType.captures = (captured != nullptr);
-        
-        // There are two types of castle moves:
-        // - one is a move where the king tries to capture its own rook
-        // - TODO the other is just O-O or O-O-O: it has no Move, just flagged as a certain castle direction
-        // that way we can make it not part of the piece definition, and just bypass these features... 
-        if (legal.pieceType == PieceType::KING && getPieceType(capturedSquare) == PieceType::ROOK)
-            legal.moveType.castles = true;
+        // check if it's the right color
+        if (getPieceTeam(legal.move.from) != color) {
+            std::cerr << getPieceTeam(legal.move.from) << " " << color << std::endl;
+            return legal;
+        } else 
+            legal.color = color;
 
         // ensure it's the right piece type
         if (pieceType == PieceType::NONE)
             legal.pieceType = getPieceType(m.from);
         else { 
             legal.pieceType = pieceType;
-            // check if it's the right piece type
-            if (getPieceType(m.from) != pieceType) {
+            if (getPieceType(m.from) != pieceType)
                 return legal;
-            }
         }
 
-        // check if it's the right color
-        if (getPieceTeam(m.from) != color) {
-            std::cerr << getPieceTeam(m.from) << " " << color << std::endl;
-            return legal;
+        Piece* captured;
+        Square capturedSquare;
+        // detect if capturing the pretend move
+        if ((pretendMove.from != pretendMove.to) && (pretendMove.to == legal.move.to))
+            capturedSquare = pretendMove.from;
+        else
+            capturedSquare = legal.move.to;
+        captured = getPiece(capturedSquare);
+        legal.moveType.captures = (captured != nullptr);
+
+        Piece* piece;
+        // There are two types of castle moves:
+        // - one is a move where the king tries to capture its own rook
+        // - TODO the other is just O-O or O-O-O: it has no Move, just flagged as a certain castle direction
+        // that way we can make it not part of the piece definition, and just bypass these features... 
+        //
+        // determine if user is trying to castle & complete the move
+        if (legal.pieceType == PieceType::KING && getPieceType(capturedSquare) == PieceType::ROOK) {
+            legal.moveType.castles = true;
+            legal.moveType.castleDir = legal.move.to.x == 7;
         }
-        
+        else if (legal.moveType.castles == true) {
+            legal.move.from = getKing(color);
+            piece = getPiece(legal.move.from);
+            legal.move.to = legal.move.from;
+            if (legal.moveType.castleDir)
+                legal.move.to.x = 0;
+            else
+                legal.move.to.x = 7;
+        } else
+            piece = getPiece(m.from);
+
+
         // move is possible via piece definition
         if (!piece->PossibleMove(m))
             return legal;
         
         // in the scenario that you're being captured, you cannot move
-        if (pretendMove.from != pretendMove.to && pretendMove.to == m.from)
+        if (pretendMove.from != pretendMove.to && pretendMove.to == legal.move.from)
             return legal;
 
         // can't capture your own piece (unless it's supposed to be a castle)
@@ -122,9 +131,8 @@ public:
             // it checks if there's anything inbetween further down!
         }
 
-        // TODO
-        Square offset = (m.to - m.from);
 
+        Square offset = (legal.move.to - legal.move.from);
         switch (legal.pieceType) {
             case PieceType::PAWN:
                 // a pawn captures if and only if it moves sideways
@@ -147,9 +155,9 @@ public:
             // it didn't / cannot jump
             
             Square step = offset.normalized();
-            Square scan = m.from;
+            Square scan = legal.move.from;
 
-            while (scan != m.to) {
+            while (scan != legal.move.to) {
                 Piece* p = getPiece(scan);
                 if ((p != nullptr) && (p != piece) && (scan != pretendMove.from)) {
                     return legal;
@@ -167,7 +175,7 @@ public:
 
             Square king;
             if (legal.pieceType == PieceType::KING) 
-                king = m.to;
+                king = legal.move.to;
             else 
                 king = getKing(color);
 
@@ -184,7 +192,7 @@ public:
                         continue;
 
                     if (legal.moveType.castles) {
-                        if (LegalMove({square, m.from}, static_cast<Teams>(i), getPieceType(square), { {-1, -1}, {-2, -2} }).valid) {
+                        if (LegalMove({square, legal.move.from}, static_cast<Teams>(i), getPieceType(square), { {-1, -1}, {-2, -2} }).valid) {
                             std::cerr << "Cannot castle out of check!" << std::endl;
                             return legal;
                         }
