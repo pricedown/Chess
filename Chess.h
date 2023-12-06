@@ -46,10 +46,6 @@ public:
     Game(std::vector<PieceMap> teams);
     ~Game();
 
-    Teams getWinner() const;
-    bool hasMoves(const Teams& color) const;
-    bool isChecked(const Teams& color) const;
-    bool inBounds(const Square& square) const;
 
     // Checks a Move's Legality and then performs the move, returns its success.
     bool AttemptMove(const Move& move, const Teams color, const PieceType pieceType);
@@ -64,6 +60,13 @@ public:
     CompleteMove LegalMove(const Move& m, const Teams color, const PieceType pieceType = PieceType::NONE, const Move& pretendMove = { }) const; 
     CompleteMove LegalMove(const CompleteMove& m) const;
 
+    // legality queries
+    Teams getWinner() const;
+    bool hasMoves(const Teams& color) const;
+    bool isChecked(const Teams& color) const;
+    bool inBounds(const Square& square) const;
+
+    // accessors
     Piece* getPiece(const Square& square) const;
     PieceType getPieceType(const Square& square) const;
     Teams getPieceTeam(const Square& square) const;

@@ -43,6 +43,7 @@ Game::~Game() {
     delete piece;
 }
 
+// Checks a Move's Legality and then performs the move, returns its success.
 bool Game::AttemptMoves(const std::vector<CompleteMove>& possibleMoves, int color) {
 
     // discover which moves are legal
@@ -69,6 +70,8 @@ bool Game::AttemptMoves(const std::vector<CompleteMove>& possibleMoves, int colo
     return false;
 }
 
+
+// User may attempt making a full move, but it is checked to be precise.
 bool Game::AttemptMove(const CompleteMove& move) {
     if (!move.valid)
         return false;
@@ -119,7 +122,6 @@ bool Game::AttemptMove(const Move& move, const Teams color, const PieceType piec
 //
 // Constant member functions
 //
-
 
 // Validates whether a move is legal in the context of the game
 CompleteMove Game::LegalMove(const CompleteMove& m) const 
@@ -346,6 +348,10 @@ CompleteMove Game::LegalMove(const Move& m, const Teams color, const PieceType p
     return legal;
 }
 
+//
+// Legality Queries
+//
+
 Teams Game::getWinner() const {
 
     // Get the current Team To Move and enemy Team
@@ -428,20 +434,14 @@ bool Game::isChecked(const Teams& color) const {
     return false;
 }
 
-PieceType Game::getPieceType(const Square& square) const {
-    for (auto team : teams) {
-        if (Piece* p = team[square]) {
-            if (p == nullptr) {
-                // This should never be reached
-                std::cerr << "Dead square: " << square.x << " " << square.y 
-                    << std::endl;
-                return PieceType::NONE;
-            }
-            return p->Type();
-        }
-    }
-    return PieceType::NONE;
+bool Game::inBounds(const Square& square) const {
+    return square.x <= 7 && square.x >= 0
+    && square.y <= 7 && square.y >= 0;
 }
+
+//
+// Accessors
+//
 
 Piece* Game::getPiece(const Square& square) const {
     for (auto team : teams) {
@@ -456,6 +456,21 @@ Piece* Game::getPiece(const Square& square) const {
         }
     }
     return nullptr;
+}
+
+PieceType Game::getPieceType(const Square& square) const {
+    for (auto team : teams) {
+        if (Piece* p = team[square]) {
+            if (p == nullptr) {
+                // This should never be reached
+                std::cerr << "Dead square: " << square.x << " " << square.y 
+                    << std::endl;
+                return PieceType::NONE;
+            }
+            return p->Type();
+        }
+    }
+    return PieceType::NONE;
 }
 
 Teams Game::getPieceTeam(const Square& square) const {
@@ -482,14 +497,8 @@ Square Game::getKing(const Teams& color) const {
     return Square{};
 }
 
-bool Game::inBounds(const Square& square) const {
-    return square.x <= 7 && square.x >= 0
-    && square.y <= 7 && square.y >= 0;
-}
-
-
 //
-// Mutators
+// Mutators & private data management
 //
 
 // appends (compressed) current board state to the board history
