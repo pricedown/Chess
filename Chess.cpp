@@ -1,10 +1,5 @@
 #include "Chess.h"
 
-Game::Game(int teamcount) { 
-    teams.reserve(teamcount); 
-    positionHistory.reserve(100);
-}
-
 Game::Game(std::vector<PieceMap> teams) : teams(teams) {
     // initialization logic
 
@@ -31,6 +26,13 @@ Game::Game(std::vector<PieceMap> teams) : teams(teams) {
     UpdateHistory();
 }
 
+// Initialize a game without pieces
+Game::Game(int teamcount) { 
+    teams.reserve(teamcount); 
+    positionHistory.reserve(100);
+}
+
+// Dynamically delete certain member data
 Game::~Game() {
     // delete piecemap pieces
     for (const auto& team : teams) for (const auto& pair : team)
@@ -57,7 +59,7 @@ bool Game::AttemptMoves(const std::vector<CompleteMove>& possibleMoves, int colo
         return true;
     }
 
-    // report improper behavior
+    // Report improper move interpretation
     std::cerr << "There are " << legalMoves.size()
         << " legal moves" << std::endl;
     for (auto move : legalMoves) {
@@ -66,9 +68,6 @@ bool Game::AttemptMoves(const std::vector<CompleteMove>& possibleMoves, int colo
     }
     return false;
 }
-
-bool Game::AttemptMove(const Move& move, const Teams color, const PieceType pieceType) 
-{ return AttemptMove(LegalMove(move, color, pieceType)); }
 
 bool Game::AttemptMove(const CompleteMove& move) {
     if (!move.valid)
@@ -80,6 +79,7 @@ bool Game::AttemptMove(const CompleteMove& move) {
 
     // perform actual move
     if (move.moveType.castles) {
+
         // castles are technically two 'moves'
         if (move.moveType.castleDir) {
             MovePiece({ move.move.from, { 6, move.move.from.y }}, move.color); // move king
@@ -88,33 +88,38 @@ bool Game::AttemptMove(const CompleteMove& move) {
             MovePiece({ move.move.from, { 2, move.move.from.y }}, move.color); // move king
             MovePiece({ { 0, move.move.from.y }, { 3, move.move.from.y }}, move.color); // move rook
         }
+
     } else {
         MovePiece(move.move, move.color);
 
-        // capture edge case for en passant!
+        // fake 'capture' edge case for en passant
         if (move.moveType.enPassant)
             DeletePiece(lastMove.move.to);   
     }
 
-    // promotions
-    if (move.move.promotion != PieceType::NONE) {
+    // perform promotions
+    if (move.move.promotion != PieceType::NONE)
         PromotePiece(move.move, move.color, move.move.promotion);
-    }
 
-    // update fifty move rule
+    // game status updates
+ 
+    // update for the fifty-move rule
+    lastReversableMove++;
     if (move.moveType.captures || move.pieceType == PieceType::PAWN)
         lastReversableMove = 0;
-    else
-        lastReversableMove++;
 
     UpdateHistory();
     lastMove = move;
     return true;
 }
 
+bool Game::AttemptMove(const Move& move, const Teams color, const PieceType pieceType) 
+{ return AttemptMove(LegalMove(move, color, pieceType)); }
+
 //
 // Constant member functions
 //
+
 
 // Validates whether a move is legal in the context of the game
 CompleteMove Game::LegalMove(const CompleteMove& m) const 
@@ -122,15 +127,19 @@ CompleteMove Game::LegalMove(const CompleteMove& m) const
 
 // This function also builds / infers a Complete, Legal move from a partial move 
 // This functionality is useful in the AttemptMove(CompleteMove) function, because it maintains that a full move must be precise in order to prevent unintended moves by a user
+// **This is the main role of the Game class, it would have been divided further if we had time left for organization, that is why it is huge.**
+// **the other main role is getWinner(), which is compartimentalized better**
 CompleteMove Game::LegalMove(const Move& m, const Teams color, const PieceType pieceType, const Move& pretendMove) const {
     // Invariant:
-    // there must be only one CompleteMove for every valid move
+    // there must be only one Legal CompleteMove for every valid move
 
+    // Assign the partial move data to the result
     CompleteMove legal;
     legal.move = m;
-    legal.valid = false;
     legal.pieceType = pieceType;
     legal.move.promotion = m.promotion;
+    // this is set to true at the end, so ~returns~ until then assert that the move is invalid
+    legal.valid = false; 
 
     if (!inBounds(legal.move.to))
         return legal;
@@ -140,6 +149,8 @@ CompleteMove Game::LegalMove(const Move& m, const Teams color, const PieceType p
         return legal;
     } else 
     legal.color = color;
+
+    // Begin filling in the rest of the move data
 
     Piece* captured;
     Square capturedSquare;
@@ -172,7 +183,7 @@ CompleteMove Game::LegalMove(const Move& m, const Teams color, const PieceType p
     // now we can define the piece ptr, since legal.move.from has been built
     piece = getPiece(legal.move.from);
 
-    // determine if user is trying to castle & complete the move
+    // determine if user is trying to castle by 'capturing' its own rook
     if (legal.color == getPieceTeam(capturedSquare)) { 
         if (legal.pieceType == PieceType::KING && getPieceType(capturedSquare) == PieceType::ROOK) {
             legal.moveType.castles = true;
@@ -196,7 +207,7 @@ CompleteMove Game::LegalMove(const Move& m, const Teams color, const PieceType p
         }
     }
 
-    // ensure it's the right piece type
+    // ensure correct piece type
     if (pieceType == PieceType::NONE) {
         legal.pieceType = getPieceType(legal.move.from);
     } else if (legal.moveType.castles) {
@@ -209,10 +220,9 @@ CompleteMove Game::LegalMove(const Move& m, const Teams color, const PieceType p
     if (legal.move.promotion != PieceType::NONE && legal.pieceType != PieceType::PAWN)
         return legal;
 
-    // check if move is possible via piece definition
-    if (!legal.moveType.castles && !piece->PossibleMove(m)) {
+    // ensure move is possible via piece definition
+    if (!legal.moveType.castles && !piece->PossibleMove(m))
         return legal;
-    }
 
     // in the scenario that you're being captured, you cannot move
     if (pretendMove.from != pretendMove.to && pretendMove.to == legal.move.from)
@@ -233,7 +243,6 @@ CompleteMove Game::LegalMove(const Move& m, const Teams color, const PieceType p
             // a pawn captures if and only if it moves sideways
             if (legal.moveType.captures != (offset.x != 0))
                 return legal;
-
 
             if (abs(offset.y) >= 2) {
                 for (auto movedPiece : moved) {
@@ -258,13 +267,13 @@ CompleteMove Game::LegalMove(const Move& m, const Teams color, const PieceType p
             break;
     }
 
-    // ... FIXME
-    // ... check if it collides with something on the way
+    // ... check if piece collides with something on the way
     if (legal.pieceType != PieceType::KNIGHT) {
-        // it didn't / cannot jump
+        // knights can jump over pieces
 
         Square step = offset.normalized();
         Square scan = legal.move.from;
+
         while (true) {
             scan += step;
             if (scan == legal.move.to)
@@ -283,7 +292,7 @@ CompleteMove Game::LegalMove(const Move& m, const Teams color, const PieceType p
         }
     }
 
-    // check that it's not moving into check
+    // ensure that it's not moving into check
     if (pretendMove.from == pretendMove.to) {
         // reached if it is the first iteration
 
@@ -337,63 +346,9 @@ CompleteMove Game::LegalMove(const Move& m, const Teams color, const PieceType p
     return legal;
 }
 
-PieceType Game::getPieceType(const Square& square) const {
-    for (auto team : teams) {
-        if (Piece* p = team[square]) {
-            if (p == nullptr) {
-                // This should never be reached
-                std::cerr << "Dead square: " << square.x << " " << square.y 
-                    << std::endl;
-                return PieceType::NONE;
-            }
-            return p->Type();
-        }
-    }
-    return PieceType::NONE;
-}
-
-Piece* Game::getPiece(const Square& square) const {
-    for (auto team : teams) {
-
-        if (Piece* p = team[square]) {
-            if (p == nullptr) {
-                // This should never be reached
-                std::cerr << "Dead square: " << square.x << " " << square.y 
-                    << std::endl;
-                return nullptr;
-            }
-            return p;
-        }
-    }
-    return nullptr;
-}
-
-Teams Game::getPieceTeam(const Square& square) const {
-    for (int i = 0; i < teams.size(); i++)
-        if (teams[i].count(square) > 0)
-            return static_cast<Teams>(i);
-    return Teams::NONE;
-}
-
-Square Game::getKing(const Teams& color) const {
-    for (const auto& pair : teams[color]) {
-        Square square = pair.first;
-        Piece* piece = pair.second;
-
-        if (piece == nullptr) {
-            // This should never be reached
-            std::cerr << "Dead square: " << square.x << " " << square.y << std::endl;
-            continue;
-        }
-
-        if (piece->Type() == PieceType::KING)
-            return square;
-    }
-    return Square{};
-}
-
 Teams Game::getWinner() const {
 
+    // Get the current Team To Move and enemy Team
     Teams tomove = lastMove.color;
     Teams color;
     for (int i = 0; i < teams.size(); i++)
@@ -418,11 +373,9 @@ Teams Game::getWinner() const {
     return Teams::NONE;
 }
 
-bool Game::inBounds(const Square& square) const {
-    return square.x <= 7 && square.x >= 0
-    && square.y <= 7 && square.y >= 0;
-}
-
+// Checks if a team has legal moves to play at all
+// NOTE: in a perfect world, if I could completely redo this program, I would make this cache all
+// legal moves for AttemptMove() to compare with...
 bool Game::hasMoves(const Teams& color) const {
     for (auto& pair : teams[color]) {
         Move move;
@@ -474,6 +427,66 @@ bool Game::isChecked(const Teams& color) const {
     }
     return false;
 }
+
+PieceType Game::getPieceType(const Square& square) const {
+    for (auto team : teams) {
+        if (Piece* p = team[square]) {
+            if (p == nullptr) {
+                // This should never be reached
+                std::cerr << "Dead square: " << square.x << " " << square.y 
+                    << std::endl;
+                return PieceType::NONE;
+            }
+            return p->Type();
+        }
+    }
+    return PieceType::NONE;
+}
+
+Piece* Game::getPiece(const Square& square) const {
+    for (auto team : teams) {
+        if (Piece* p = team[square]) {
+            if (p == nullptr) {
+                // This should never be reached
+                std::cerr << "Dead square: " << square.x << " " << square.y 
+                    << std::endl;
+                return nullptr;
+            }
+            return p;
+        }
+    }
+    return nullptr;
+}
+
+Teams Game::getPieceTeam(const Square& square) const {
+    for (int i = 0; i < teams.size(); i++)
+        if (teams[i].count(square) > 0)
+            return static_cast<Teams>(i);
+    return Teams::NONE;
+}
+
+Square Game::getKing(const Teams& color) const {
+    for (const auto& pair : teams[color]) {
+        Square square = pair.first;
+        Piece* piece = pair.second;
+
+        if (piece == nullptr) {
+            // This should never be reached
+            std::cerr << "Dead square: " << square.x << " " << square.y << std::endl;
+            continue;
+        }
+
+        if (piece->Type() == PieceType::KING)
+            return square;
+    }
+    return Square{};
+}
+
+bool Game::inBounds(const Square& square) const {
+    return square.x <= 7 && square.x >= 0
+    && square.y <= 7 && square.y >= 0;
+}
+
 
 //
 // Mutators
