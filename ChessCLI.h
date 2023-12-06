@@ -1,6 +1,8 @@
 #include "Chess.h"
 #include <iostream>
 
+// **THIS IS NOT WRITTEN BY ME, CREDIT GOES TO @EddieSlobodow :)**
+
 using namespace std;
 
 AlgebraicMove discoverMove(std::string in) {
